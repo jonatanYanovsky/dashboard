@@ -4,6 +4,8 @@ import datetime
 import plotly.plotly as py
 import plotly.graph_objs as go
 
+# https://plot.ly/python/tree-plots/
+
 
 with open('radical.entk.task_manager.0000-proc.prof') as csvfile:
 	row_count = 0   # initialize number of rows in file to 0
@@ -15,7 +17,7 @@ with open('radical.entk.task_manager.0000-proc.prof') as csvfile:
 		array = row.split(',')  # split row into elements
        		first_item = array[0]   # get first element in row
 		state_item = array[1]  # get second element in row
-		if first_item != '#time' and first_item != "": # avoid collecting garbage
+		if first_item != '#time' and first_item != "": # avoid collecting garbage for ALL elements, not just first_state
 			date_item = time.strftime("%H:%M:%S", time.localtime(float(first_item)))   #epoch to date format 
 			row_count = row_count + 1    # increment row counter		
 			xvalues.append(date_item)    # append each date_item value (for each row) to array xvalues
@@ -43,8 +45,11 @@ with open('radical.entk.task_manager.0000-proc.prof') as csvfile:
 			
 	#for i in range(0, row_count):
 	#	print(xvalues[i], yvalues2[i]) # debug, 
+	#print(len(xvalues), len(yvalues2), len(y1values))
 
 	data = [go.Bar(x=xvalues,y=yvalues2)]
+	
+	
 
 	trace0 = go.Scatter(
 		x=xvalues,
@@ -56,5 +61,5 @@ with open('radical.entk.task_manager.0000-proc.prof') as csvfile:
 	)
 	data1 = [trace0]
 
-	py.plot(data)
-	py.iplot(data1, filename='bubblechart-size')  # error, something must be added
+	#py.plot(data)
+	#py.plot(data1)#, filename='bubblechart-size')  # error, something must be added
