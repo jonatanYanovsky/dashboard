@@ -2,9 +2,7 @@
 Analytical Dashboard for RADICAL Cybertools
 
 
-Note: proof.png shows program output of reader.py
-
-It is the number of events happening per second visualized using plotly
+Note: Check out proof.png to see what output from reader.py will look like. For now, it shows the number of events happening per second  with a bar graph. To run the program, make sure to put the example log file in the same directory as the python executable.
 
 Google docs showcasing our progress:
 
