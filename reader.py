@@ -8,6 +8,45 @@ import plotly.graph_objs as go
 # https://plot.ly/python/tree-plots/
 
 
+def pst():   # function for implementing PST plot
+
+	with open('radical.entk.appmanager.0000.prof') as csvfile:
+		row_count = 0   # initialize number of rows in file to 0
+		csvfile.readline() # skip first line
+		csvfile.readline() # skip second line
+		for row in csvfile.readlines(): # read every line in the file
+			array = row.split(',')  # split row into elements
+			
+			# fix try catch cases below to output Stages/Task plot as Pipeline of Ensembles			
+			try:
+				stage_item = array[4].split('.')[2]   # isolate (task #) from string
+			except:
+				task_item = -1   # else set to -1
+			try:
+				stage_item = array[6].split('.')[3].rstrip()   # isolate (stage #) from string
+			except:
+				stage_item = -1   # else set to -1
+
+
+			if task_item != '': # avoid collecting garbage for ALL elements 
+				row_count = row_count + 1    # increment row counter		
+			else:
+				break
+
+		xvalues = range(1,row_count)    # time values
+				
+		#for i in range(0, row_count):
+		#	print(xvalues[i], xtaskvalues[i]) # debug, 
+		#print(len(xvalues), len(yvalues2), len(y1values))
+
+		trace0 = go.Scatter(
+			x = xvalues,
+			y = taskvalues
+		)		
+
+		data = [trace0]
+		#py.plot(data)
+
 def taskseries():    # function for implementing task series plot
 
 	with open('radical.entk.task_manager.0000-proc.prof') as csvfile:
@@ -29,7 +68,6 @@ def taskseries():    # function for implementing task series plot
 
 		xvalues = range(1,row_count)    # time values
 				
-
 		#for i in range(0, row_count):
 		#	print(xvalues[i], xtaskvalues[i]) # debug, 
 		#print(len(xvalues), len(yvalues2), len(y1values))
@@ -51,6 +89,7 @@ def timeseries():   # function for implementing time series plot
 		yvalues = []    # y-variable array for time series
 		y1values = []   # y-variable array for state series
 		csvfile.readline() # skip first line
+		csvfile.readline() # skip second line
 		for row in csvfile.readlines(): # read every line in the file
 			array = row.split(',')  # split row into elements
 	       		first_item = array[0]   # get first element in row
@@ -87,6 +126,8 @@ def timeseries():   # function for implementing time series plot
 		data = [go.Bar(x=xvalues,y=yvalues2)]
 		py.plot(data)
 
+
+## FUNCTION CALLS
 #timeseries()  # call timeseries() function
 #taskseries()  # call taskseries() function
-
+#pst()         # call pst() function
