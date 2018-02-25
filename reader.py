@@ -2,7 +2,6 @@ import csv
 import time
 import datetime
 import plotly.plotly as py
-import plotly.offline as
 import plotly.graph_objs as go
 
 
@@ -15,21 +14,22 @@ def taskseries():    # function for implementing task series plot
 		row_count = 0   # initialize number of rows in file to 0
 		taskvalues = []
 		csvfile.readline() # skip first line
+		csvfile.readline() # skip second line
 		for row in csvfile.readlines(): # read every line in the file
 			array = row.split(',')  # split row into elements
 			try:
 				task_item = array[4].split('.')[3]   # isolate (task #) from string
 			except:
 				task_item = -1   # else set to -1
-			if task_item != 'thread' and task_item != "": # avoid collecting garbage for ALL elements 
+			if task_item != -1: # avoid collecting garbage for ALL elements 
 				row_count = row_count + 1    # increment row counter		
 				taskvalues.append(task_item)  # append (task #) elements to taskvalues array
 			else:
 				break
 
 		xvalues = range(1,row_count)    # time values
-			
-			
+				
+
 		#for i in range(0, row_count):
 		#	print(xvalues[i], xtaskvalues[i]) # debug, 
 		#print(len(xvalues), len(yvalues2), len(y1values))
@@ -79,7 +79,7 @@ def timeseries():   # function for implementing time series plot
 		for y in yvalues: # create multiple copies of this y value for other x values
 			for i in range(0, y):
 				yvalues2.append(y)
-			
+	
 		#for i in range(0, row_count):
 		#	print(xvalues[i], xtaskvalues[i]) # debug, 
 		#print(len(xvalues), len(yvalues2), len(y1values))
@@ -87,6 +87,6 @@ def timeseries():   # function for implementing time series plot
 		data = [go.Bar(x=xvalues,y=yvalues2)]
 		py.plot(data)
 
-#timeseries()  - call timeseries() function
-#taskseries()  - call taskseries() function
+#timeseries()  # call timeseries() function
+#taskseries()  # call taskseries() function
 
