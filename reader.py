@@ -14,38 +14,42 @@ def pst():   # function for implementing PST plot
 		row_count = 0   # initialize number of rows in file to 0
 		csvfile.readline() # skip first line
 		csvfile.readline() # skip second line
+		timevalues = []     # time array
+		pstinfo = []        # pipeline, task, stage values
 		for row in csvfile.readlines(): # read every line in the file
 			array = row.split(',')  # split row into elements
-			
-			# fix try catch cases below to output Stages/Task plot as Pipeline of Ensembles			
+			first_item = array[0]	 # isolate time element		
 			try:
-				stage_item = array[4].split('.')[2]   # isolate (task #) from string
+				event_item = array[1]   # assign event values
 			except:
-				task_item = -1   # else set to -1
+				event_item = -1   # else set to -1
 			try:
-				stage_item = array[6].split('.')[3].rstrip()   # isolate (stage #) from string
+				pst_item = array[4].split('.')[2]   # isolate pst terms (pipeline, stage, or task)
 			except:
-				stage_item = -1   # else set to -1
+				pst_item = -1    # else set to -1
+			try:
+				number_item = array[4].split('.')[3]   # isolate tasknumber values
+			except:
+				number_item = -1
 
-
-			if task_item != '': # avoid collecting garbage for ALL elements 
-				row_count = row_count + 1    # increment row counter		
+			if pst_item != -1: # avoid collecting garbage for ALL elements 
+				row_count = row_count + 1    # increment row counter
+				time_value = time.strftime("%H:%M:%S", time.localtime(float(first_item)))   #epoch to date format
+				timevalues.append(time_value)
+				pstinfo_item = pst_item+number_item	#pst information
+				pstinfo.append(pstinfo_item)    # tasknumber array			
 			else:
-				break
-
-		xvalues = range(1,row_count)    # time values
-				
-		#for i in range(0, row_count):
-		#	print(xvalues[i], xtaskvalues[i]) # debug, 
-		#print(len(xvalues), len(yvalues2), len(y1values))
+				break		
 
 		trace0 = go.Scatter(
-			x = xvalues,
-			y = taskvalues
+			x = timevalues,
+			y = pstinfo
 		)		
 
 		data = [trace0]
-		#py.plot(data)
+		py.plot(data)
+
+
 
 def taskseries():    # function for implementing task series plot
 
