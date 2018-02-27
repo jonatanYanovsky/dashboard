@@ -4,18 +4,32 @@
 	<script>
 	
 	function setURL(xhttp) {
-		var iframe = xhttp.responseText;
-		document.getElementById("plot").innerHTML = iframe;
+		//alert("recieved");
+		//var iframe = xhttp.responseText;
+		document.getElementById("plot").innerHTML = xhttp;
 	}
 	
 	function server() { // contacts server, requests url
-		var xhttp = new XMLHttpRequest();
+		var comments = new XMLHttpRequest();
 		
-		comments.onreadystatechange = function() {
-			if (this.readyState == 4 && this.status == 200) setURL(this);
-		};
+		/*comments.onreadystatechange = function() {
+			//alert("Got");
+
+			
+			/*if (this.readyState == 4 && this.status == 200) {
+				setURL(this);
+				alert("Got");
+			}*/
+		//};
 		
-		comments.open("GET", "http://localhost:8080/", true);
+		comments.onload = function()
+			{	
+			//alert("a");
+			setURL(comments.responseText);
+			}
+
+		
+		comments.open("GET", "http://localhost:5000/", true);
 		comments.send();
 	}
 	</script>
@@ -24,7 +38,7 @@
 
 <p>**Sample Graph Description**</p>
 
-<p id="plot"> </p>
+<p id="plot"> iframe </p>
 <!--
 <iframe id ="plot" width='640' height='480' frameborder='0' scrolling='no' src=''> </iframe>
 
