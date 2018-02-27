@@ -14,11 +14,11 @@ def pst():   # function for implementing PST plot
 		row_count = 0   # initialize number of rows in file to 0
 		csvfile.readline() # skip first line
 		csvfile.readline() # skip second line
+		startTime = int(round(time.time() * 1000))
 		timevalues = []     # time array
 		pstinfo = []        # pipeline, task, stage values
 		for row in csvfile.readlines(): # read every line in the file
-			array = row.split(',')  # split row into elements
-			first_item = array[0]	 # isolate time element		
+			array = row.split(',')  # split row into elements		
 			try:
 				event_item = array[1]   # assign event values
 			except:
@@ -34,8 +34,8 @@ def pst():   # function for implementing PST plot
 
 			if pst_item != -1: # avoid collecting garbage for ALL elements 
 				row_count = row_count + 1    # increment row counter
-				time_value = time.strftime("%H:%M:%S", time.localtime(float(first_item)))   #epoch to date format
-				timevalues.append(time_value)
+				currentTime = int(round(time.time() * 1000)) - startTime     # epoch to milliseconds
+				timevalues.append(currentTime)
 				pstinfo_item = pst_item+number_item	#pst information
 				pstinfo.append(pstinfo_item)    # tasknumber array			
 			else:
@@ -134,4 +134,4 @@ def timeseries():   # function for implementing time series plot
 ## FUNCTION CALLS
 #timeseries()  # call timeseries() function
 #taskseries()  # call taskseries() function
-#pst()         # call pst() function
+pst()         # call pst() function
