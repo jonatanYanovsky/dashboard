@@ -1,13 +1,30 @@
 <!DOCTYPE html>
 <html>
-<body>
-
+<body onload="server()">
+	<script>
+	
+	function setURL(xhttp) {
+		var url = xhttp.responseText;
+		document.getElementById("ticker").src = url + ".embed?width=640&height=480";
+	}
+	
+	function server() { // contacts server, requests url
+		var xhttp = new XMLHttpRequest();
+		
+		comments.onreadystatechange = function() {
+			if (this.readyState == 4 && this.status == 200) setURL(this);
+		};
+		
+		comments.open("GET", "http://localhost:8080/", true);
+		comments.send();
+	}
+	
 <h1>DASHBOARD</h1>
 
 <p>**Sample Graph Description**</p>
 
 
-<iframe width='640' height='480' frameborder='0' scrolling='no' src='https://plot.ly/~Satguide2012/24/.embed?width=640&height=480'> </iframe>
+<iframe id ="plot" width='640' height='480' frameborder='0' scrolling='no' src=''> </iframe>
 
 <iframe width='640' height='480' frameborder='0' scrolling='no' src='https://plot.ly/~rgupta2018/59/.embed?width=640&height=480'> </iframe>
 
