@@ -47,7 +47,7 @@ def pst():   # function for implementing PST plot
 		)		
 
 		data = [trace0]
-		py.plot(data)
+		return py.plot(data)
 
 
 
@@ -82,7 +82,7 @@ def taskseries():    # function for implementing task series plot
 		)		
 
 		data = [trace0]
-		py.plot(data)
+		return py.plot(data)
 
 
 def timeseries():   # function for implementing time series plot
@@ -128,10 +128,10 @@ def timeseries():   # function for implementing time series plot
 		#print(len(xvalues), len(yvalues2), len(y1values))
 
 		data = [go.Bar(x=xvalues,y=yvalues2)]
-		py.plot(data)
+		return py.plot(data)
 
 
 ## FUNCTION CALLS
 #timeseries()  # call timeseries() function
 #taskseries()  # call taskseries() function
-pst()         # call pst() function
+#pst()         # call pst() function
