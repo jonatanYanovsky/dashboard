@@ -1,7 +1,8 @@
 from flask import Flask
 from flask import request
 from flask_cors import CORS
-import importlib
+#import importlib
+import reader
 
 app = Flask(__name__)
 CORS(app)
@@ -16,22 +17,29 @@ def getPlotlyURL():
 	    	#if request.form['plot'] != None:
 			#if
 			
-	    	importlib.import_module("reader.py") # get our graphing code
+	    	#importlib.import_module("reader") # get our graphing code
 		
+		print(request)
+		#print(request.form)
 	    	req = request.form['plot']
 		url = ""
+
+		#graphsClassInstance = reader.graphing()
 		
 	    	if req == "timeseries":
-	    		url = timeseries()
+	    		url = reader.timeseries()
 			
 	    	elif req == "taskseries":
-			url = taskseries()
+			url = reader.taskseries()
 		
 		elif req == "pst":
-			url = pst()
+			url = reader.pst()
 		
 		else:
+			print("invalid")
 	    		return "<p>Invalid Synatax</p>" 
-	   
+
+	   	print(url)
+		print("<iframe width='640' height='480' frameborder='0' scrolling='no' src='" + url + ".embed?width=640&height=480'> </iframe>")
 		return "<iframe width='640' height='480' frameborder='0' scrolling='no' src='" + url + ".embed?width=640&height=480'> </iframe>"
 		

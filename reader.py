@@ -7,6 +7,7 @@ import plotly.graph_objs as go
 
 # https://plot.ly/python/tree-plots/
 
+#class graphing:
 
 def pst():   # function for implementing PST plot
 
@@ -47,7 +48,7 @@ def pst():   # function for implementing PST plot
 		)		
 
 		data = [trace0]
-		return py.plot(data)
+		return py.plot(data, filename='a', auto_open=False)
 
 
 
@@ -71,7 +72,7 @@ def taskseries():    # function for implementing task series plot
 				break
 
 		xvalues = range(1,row_count)    # time values
-				
+			
 		#for i in range(0, row_count):
 		#	print(xvalues[i], xtaskvalues[i]) # debug, 
 		#print(len(xvalues), len(yvalues2), len(y1values))
@@ -82,11 +83,11 @@ def taskseries():    # function for implementing task series plot
 		)		
 
 		data = [trace0]
-		return py.plot(data)
+		return py.plot(data, filename='a', auto_open=False)
 
 
 def timeseries():   # function for implementing time series plot
-	
+
 	with open('radical.entk.task_manager.0000-proc.prof') as csvfile:
 		row_count = 0   # initialize number of rows in file to 0
 		xvalues = []    # x-variable array for time series
@@ -113,7 +114,7 @@ def timeseries():   # function for implementing time series plot
 			else:
 				yvalues.append(counter)   # append counter value to array yvalues (should correspond to each xvalue)
 				counter = 1               # set counter back to 1 for next element
-	
+
 		yvalues.append(counter) # don't forget to add the last element
 
 		yvalues.remove(1) # remove first element - the first occurrence of a pesky "1"
@@ -122,13 +123,13 @@ def timeseries():   # function for implementing time series plot
 		for y in yvalues: # create multiple copies of this y value for other x values
 			for i in range(0, y):
 				yvalues2.append(y)
-	
+
 		#for i in range(0, row_count):
 		#	print(xvalues[i], xtaskvalues[i]) # debug, 
 		#print(len(xvalues), len(yvalues2), len(y1values))
 
 		data = [go.Bar(x=xvalues,y=yvalues2)]
-		return py.plot(data)
+		return py.plot(data, filename='a', auto_open=False)
 
 
 ## FUNCTION CALLS
