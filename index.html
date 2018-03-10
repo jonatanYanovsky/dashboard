@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+	<script>
+		function setPlotAndRedirect(plot) {
+			var url = "basic.html";
+			localStorage.setItem("plot",plot);
+			window.location.href = url;
+		}
+
+	</script>
+
+<h1>DASHBOARD</h1>
+
+<a href="" onClick="setPlotAndRedirect('pst');">pst</p>
+<br>
+<a href="" onClick="setPlotAndRedirect('timeseries');">timeseries</p>
+<br>
+<a href="" onClick="setPlotAndRedirect('taskseries');">taskseries</p>
+
+</body>
+</html>
