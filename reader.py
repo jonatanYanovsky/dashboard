@@ -7,10 +7,15 @@ import plotly.graph_objs as go
 
 # https://plot.ly/python/tree-plots/
 
+def getConf():	# get data stored in configuration file
+	with open('dashboard.conf') as conf:
+		conf.readline() # skip first line
+		row = conf.readline() # get second line
+		print row
+
 #class graphing:
 
 def pst():   # function for implementing PST plot
-
 	with open('radical.entk.appmanager.0000.prof') as csvfile:
 		row_count = 0   # initialize number of rows in file to 0
 		csvfile.readline() # skip first line

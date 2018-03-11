@@ -2,15 +2,20 @@ from flask import Flask
 from flask import request
 from flask_cors import CORS
 import reader
+import webbrowser
 
 app = Flask(__name__)
 CORS(app)
+webbrowser.open_new_tab("index.html")
+
 
 @app.route('/', methods=['GET', 'POST'])
 def getPlotlyURL():
 	if request.method == 'POST':
-		#print(request)
-		#print(request.form)
+		
+		reader.getConf()
+		
+		
 	    	req = request.form['plot']
 		url = ""
 
