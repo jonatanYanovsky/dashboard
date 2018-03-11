@@ -8,13 +8,9 @@ app = Flask(__name__)
 CORS(app)
 webbrowser.open_new_tab("index.html")
 
-
 @app.route('/', methods=['GET', 'POST'])
 def getPlotlyURL():
-	if request.method == 'POST':
-		
-		reader.getConf()
-		
+	if request.method == 'POST':		
 		
 	    	req = request.form['plot']
 		url = ""

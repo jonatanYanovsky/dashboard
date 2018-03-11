@@ -3,6 +3,7 @@ import time
 import datetime
 import plotly.plotly as py
 import plotly.graph_objs as go
+import os
 
 
 # https://plot.ly/python/tree-plots/
@@ -11,18 +12,75 @@ def getConf():	# get data stored in configuration file
 	with open('dashboard.conf') as conf:
 		conf.readline() # skip first line
 		row = conf.readline() # get second line
-		print row
+		if row == "" or row == None:
+			return -1
+		
+		#print "\n"
+
+		directories = []
+
+		for x in os.listdir(row.rstrip()): # only the names of the files/directories
+
+			z = row.rstrip() + x # the absolute path to the directory
+			if os.path.isdir(z): #print x
+				name =  x.split('.')
+				if name[0] == "re":
+					directories.append(x)
+
+		highestValue = 0
+
+		for myDir in directories:
+			num = myDir.split('.')[4] # get today's executions
+			if num > highestValue:
+				highestValue = num
+
+		directories2 = []
+	
+		for myDir in directories:
+			num = myDir.split('.')[4] # place largest numbers into another list
+			if num == highestValue:
+				directories2.append(myDir)
+
+		highestValue = 0
+		highestIndex = 0
+		idx = 0
+
+		# again, look through this list to find the most recent (or current execution)
+		
+		for myDir in directories2:
+			num = myDir.split('.')[5]
+			if num > highestValue:
+				highestValue = num
+				highestIndex = idx
+			idx += 1
+
+		#print directories2[highestIndex]
+
+		#print "\n"
+
+		return row.rstrip() # the path to the file to open
 
 #class graphing:
 
 def pst():   # function for implementing PST plot
-	with open('radical.entk.appmanager.0000.prof') as csvfile:
+	myFile = getConf()
+	if myFile == -1:
+		print("Config file is unreadable")
+		return
+
+	myFile += "radical.entk.appmanager.0000.prof"
+
+	print myFile
+
+	with open(myFile) as csvfile:
+
 		row_count = 0   # initialize number of rows in file to 0
 		csvfile.readline() # skip first line
 		csvfile.readline() # skip second line
 		startTime = int(round(time.time() * 1000))
 		timevalues = []     # time array
 		pstinfo = []        # pipeline, task, stage values
+
 		for row in csvfile.readlines(): # read every line in the file
 			array = row.split(',')  # split row into elements		
 			try:
@@ -58,8 +116,16 @@ def pst():   # function for implementing PST plot
 
 
 def taskseries():    # function for implementing task series plot
+	myFile = getConf()
+	if myFile == -1:
+		print("Config file is unreadable")
+		return
 
-	with open('radical.entk.task_manager.0000-proc.prof') as csvfile:
+	myFile += "radical.entk.task_manager.0000-proc.prof"
+
+	print myFile
+
+	with open(myFile) as csvfile:
 		row_count = 0   # initialize number of rows in file to 0
 		taskvalues = []
 		csvfile.readline() # skip first line
@@ -92,8 +158,16 @@ def taskseries():    # function for implementing task series plot
 
 
 def timeseries():   # function for implementing time series plot
+	myFile = getConf()
+	if myFile == -1:
+		print("Config file is unreadable")
+		return
 
-	with open('radical.entk.task_manager.0000-proc.prof') as csvfile:
+	myFile += "radical.entk.task_manager.0000-proc.prof"
+
+	print myFile
+
+	with open(myFile) as csvfile:
 		row_count = 0   # initialize number of rows in file to 0
 		xvalues = []    # x-variable array for time series
 		yvalues = []    # y-variable array for time series
