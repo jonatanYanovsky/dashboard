@@ -4,24 +4,59 @@ import datetime
 import plotly.plotly as py
 import plotly.graph_objs as go
 import os
+import linecache
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
 
+class GlobalData():
+	myHandlerDirectory = "" 
+	detectedChange = False
 
-# https://plot.ly/python/tree-plots/
+class MyHandler(FileSystemEventHandler):
+    def on_modified(self, event):
+	if GlobalData.detectedChange == True: # don't print more output than necessary
+		return
+        if event.src_path == GlobalData.myHandlerDirectory + "radical.entk.appmanager.0000.prof":
+		print "appmanager has been modified" #"appmanager has been modified"
+		GlobalData.detectedChange = True
+
+def scanForChanges(myDir):
+	GlobalData.detectedChange = False
+	GlobalData.myHandlerDirectory = myDir
+
+	print "scanning for changes in: " + myDir
+
+	event_handler = MyHandler()
+	observer = Observer()
+	observer.schedule(event_handler, path=myDir, recursive=False)
+	observer.start()
+
+	try:
+		while GlobalData.detectedChange == False:
+			time.sleep(1)
+			print "sleep"
+		print "returning"
+		observer.stop()
+		observer.join()
+		return
+	except KeyboardInterrupt:
+		observer.stop()
+	observer.join()
+
 
 def getConf():	# get data stored in configuration file
 	with open('dashboard.conf') as conf:
 		conf.readline() # skip first line
-		row = conf.readline() # get second line
+		row = conf.readline() # get second line, the path to the example/executable, but not the output
 		if row == "" or row == None:
 			return -1
-		
-		#print "\n"
-
+	
 		directories = []
+		rs = row.rstrip()
 
 		for x in os.listdir(row.rstrip()): # only the names of the files/directories
 
-			z = row.rstrip() + x # the absolute path to the directory
+			z = rs + x # the absolute path to the directory
 			if os.path.isdir(z): #print x
 				name =  x.split('.')
 				if name[0] == "re":
@@ -54,13 +89,57 @@ def getConf():	# get data stored in configuration file
 				highestIndex = idx
 			idx += 1
 
-		#print directories2[highestIndex]
+		try:
+			theDirectory = directories2[highestIndex]
+		except IndexError:
+			return -1
 
-		#print "\n"
+		return rs + theDirectory.rstrip() + "/" # the path to the directory
 
-		return row.rstrip() # the path to the file to open
 
-#class graphing:
+def testReader(): # prototype for changes-scanning file parsing
+	myDir = getConf()
+	if myDir == -1:
+		print("Config file is unreadable")
+		return
+
+	myFile = myDir + "radical.entk.appmanager.0000.prof"
+
+	print "opening file: " + myFile
+
+	lineCount = 1
+
+	#with open(myFile) as csvfile:
+
+	while 1: # read every line in the file
+		print lineCount, myFile
+		row = linecache.getline(myFile, lineCount)
+		lineCount += 1
+		print "readline: " + row
+
+		if row == "":
+			print "Keep scanning"
+			# we did NOT encounter the "END", so we must keep scanning until we reach the end
+			scanForChanges(myDir)
+			linecache.checkcache(myFile)
+			lineCount -= 1 # go back and reread the line
+			continue
+		
+
+		array = row.split(',')  # split row into elements	
+
+		try:
+			eventName = array[1]
+		except:
+			eventName = -1
+
+		if eventName == "END":
+			print "END" # we have reached the last line, we can stop scanning for changes at this point
+			return -1
+
+			
+		
+
 
 def pst():   # function for implementing PST plot
 	myFile = getConf()
