@@ -1,39 +1,134 @@
 <!DOCTYPE html>
 <html>
-<body onload="server()">
+
+<head>
+	<title>RADICAL dashboard</title>
+	<meta charset="UTF-8">
 	
+	<!-- import Plotly.js -->
+	<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+
+<body onload="start()">
+	
+	<style>
+/*
+	h1 {
+		height: 200px;
+		width: 400px;
+
+		position: fixed;
+		top: 50%;
+		left: 50%;
+		margin-top: -100px;
+		margin-left: -200px;
+	}
+
+	p {
+		height: 200px;
+		width: 400px;
+
+		position: fixed;
+		top: 50%;
+		left: 50%;
+		margin-top: -100px;
+		margin-left: -200px;
+	}
+	*/
+	</style>
+
 	<script>
+
+	function start() {
+		
+		//var plot = getPlotType();
+
+		var type = browserPlot();
+		//document.getElementById("plotName").innerHTML = type; // set the text above the plot
+		updatePlot();
+		//server();
+		//setInterval(server, 5000);
+
+	}
 
 	function getPlotType() { 
 		var type = localStorage.getItem("plot");
-		document.getElementById("plotName").innerHTML = type;
 		return type;
-	}
-
-	function setURL(xhttp) {
-		document.getElementById("plot").innerHTML = xhttp;
 	}
 	
 	function server() { // contacts server, requests iframe
 		var req = new XMLHttpRequest(); // the request
 		
 		req.onload = function() {	
-			setURL(req.responseText);
+			var val = JSON.parse(req.responseText);
+			updatePlot(val);
 		}
-		
+
 		var plot = getPlotType();
 
 		req.open("POST", "http://localhost:5000/", true);
 		req.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
  		req.send("plot=" + plot);
 	}
+
+	function browserPlot() { // create empty plot
+
+		var data = [{
+			x: [1,2],
+			y: [1,2],
+			type: 'bar'
+		}];
+
+		Plotly.newPlot('graph', data);
+	}
+
+	function updatePlot() { //values // continuously update the plot
+
+		/*var xval = values[0];
+		var yval = values[1];
+
+		console.log(xval);
+		console.log(yval);
+
+		//var update = [];
+		*/
+
+		/*var pusher = {};
+		
+		var i;
+		for (i = 0; i < xval.length; i++) {
+			console.log(xval[i]);
+			console.log(yval[i]);
+			//pusher = {}; // empty it out
+			//pusher[xval[i]] = yval[i];
+			//console.log(pusher);
+			update.push({[xval[i]] : yval[i]});
+		}*/
+		/*var update = [{
+			x: [xval], 
+			y: [yval]
+		}];*/
+		var data = [{
+			x: [3, 4],
+			y: [3, 4], 
+			type: 'bar'
+		}];
+		Plotly.extendTraces('graph', data); //, 0, 20);
+		//Plotly.extendTraces('graph', {y: [[Math.random()]]}, [0])
+
+		//Plotly.extendTraces('graph', data);//{y: [[1]]}, [2]); // all together
+	}
+
 	</script>
+
+
 	
 <h1>DASHBOARD</h1>
 
-<p id="plotName"> </p>
+<p id="plotName"></p>
 
-<p id="plot">loading</p>
+<div id="graph" style="width: 480px; height: 400px;">loading</div>
+    
 
 </body>
 </html>
