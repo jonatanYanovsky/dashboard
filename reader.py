@@ -8,23 +8,37 @@ import linecache
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
-class GlobalData():
+
+class GlobalData(): # for use in MyHandler and scanForChanges
+	def reset():
+		myHandlerDirectory = "" 
+		detectedChange = False
+		timeData = []
+		pipelineData = []
+		reachedEnd = False
+
 	myHandlerDirectory = "" 
 	detectedChange = False
+	timeData = []
+	pipelineData = []
+	reachedEnd = False
 
-class MyHandler(FileSystemEventHandler):
+def getParsedData():
+	return (GlobalData.timeData, GlobalData.pipelineData)
+
+class MyHandler(FileSystemEventHandler): # used to detect changes, works in tandem with scanForChanges
     def on_modified(self, event):
 	if GlobalData.detectedChange == True: # don't print more output than necessary
 		return
         if event.src_path == GlobalData.myHandlerDirectory + "radical.entk.appmanager.0000.prof":
-		print "appmanager has been modified" #"appmanager has been modified"
+		#print "appmanager has been modified" #"appmanager has been modified"
 		GlobalData.detectedChange = True
 
 def scanForChanges(myDir):
 	GlobalData.detectedChange = False
 	GlobalData.myHandlerDirectory = myDir
 
-	print "scanning for changes in: " + myDir
+	#print "scanning for changes in: " + myDir
 
 	event_handler = MyHandler()
 	observer = Observer()
@@ -33,9 +47,9 @@ def scanForChanges(myDir):
 
 	try:
 		while GlobalData.detectedChange == False:
-			time.sleep(1)
-			print "sleep"
-		print "returning"
+			time.sleep(1) 
+			#print "sleep"
+		#print "returning"
 		observer.stop()
 		observer.join()
 		return
@@ -44,7 +58,78 @@ def scanForChanges(myDir):
 	observer.join()
 
 
-def getConf():	# get data stored in configuration file
+def testReader(): # prototype for changes-scanning file parsing
+	myDir = getConf()
+	if myDir == -1:
+		print("Config file is unreadable")
+		return
+
+	myFile = myDir + "radical.entk.appmanager.0000.prof"
+
+	#print "opening file: " + myFile
+
+	lineCount = 1
+	numElements = 1
+
+
+	while 1: # read every line in the file
+		#print lineCount, myFile
+		row = linecache.getline(myFile, lineCount)
+		lineCount += 1
+		#print "readline: " + row
+
+		if row == "":
+			print "Keep scanning"
+			# we did NOT encounter the "END", so we must keep scanning until we reach the end
+			scanForChanges(myDir)
+			linecache.checkcache(myFile) # used for when the file has been modified
+			lineCount -= 1 # go back and reread the line
+			continue
+
+		array = row.split(',')  # split row into elements	
+
+		try: # used for breaking the while loop
+			epoch = array[0]
+			eventName = array[1]
+		except:
+			eventName = -1
+
+		if eventName == "END":
+			#print "END" # we have reached the last line, we can stop scanning for changes at this point
+			GlobalData.reachedEnd = true
+			break
+		
+		try: # gets the cell potentially containing the pipeline, stage, or task
+			pstName = array[4]
+		except:
+			pstName = -1
+		
+		parts = pstName.split('.')
+		nameID = 0
+
+		try:
+			name = parts[2] # check for pipeline
+			nameID = parts[3]
+		except:
+			continue
+		
+		if name == "pipeline":
+			if nameID == "0000":
+				GlobalData.pipelineData.append(eventName)
+				myTime = time.strftime("%H:%M:%S", time.localtime(float(epoch)))   #epoch to date format 
+				#timeData.append(myTime)
+				GlobalData.timeData.append(numElements)
+				numElements += 1
+		
+	#trace0 = go.Bar(
+	x = GlobalData.timeData
+	y = GlobalData.pipelineData
+	z = (x, y)
+	#return z # an object composed of the lists timeData and pipelineData
+		
+
+
+def getConf():	# get data stored in configuration file, and find the directory that it points to
 	with open('dashboard.conf') as conf:
 		conf.readline() # skip first line
 		row = conf.readline() # get second line, the path to the example/executable, but not the output
@@ -91,54 +176,13 @@ def getConf():	# get data stored in configuration file
 
 		try:
 			theDirectory = directories2[highestIndex]
-		except IndexError:
+		except: #  IndexError
 			return -1
+
+		if theDirectory != GlobalData.myHandlerDirectory:
+			GlobalData.reset() # make preparations for new execution
 
 		return rs + theDirectory.rstrip() + "/" # the path to the directory
-
-
-def testReader(): # prototype for changes-scanning file parsing
-	myDir = getConf()
-	if myDir == -1:
-		print("Config file is unreadable")
-		return
-
-	myFile = myDir + "radical.entk.appmanager.0000.prof"
-
-	print "opening file: " + myFile
-
-	lineCount = 1
-
-	#with open(myFile) as csvfile:
-
-	while 1: # read every line in the file
-		print lineCount, myFile
-		row = linecache.getline(myFile, lineCount)
-		lineCount += 1
-		print "readline: " + row
-
-		if row == "":
-			print "Keep scanning"
-			# we did NOT encounter the "END", so we must keep scanning until we reach the end
-			scanForChanges(myDir)
-			linecache.checkcache(myFile)
-			lineCount -= 1 # go back and reread the line
-			continue
-		
-
-		array = row.split(',')  # split row into elements	
-
-		try:
-			eventName = array[1]
-		except:
-			eventName = -1
-
-		if eventName == "END":
-			print "END" # we have reached the last line, we can stop scanning for changes at this point
-			return -1
-
-			
-		
 
 
 def pst():   # function for implementing PST plot
