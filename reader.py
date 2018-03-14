@@ -10,7 +10,7 @@ from watchdog.events import FileSystemEventHandler
 
 
 class GlobalData(): # for use in MyHandler and scanForChanges
-	def reset():
+	def zero(self):
 		myHandlerDirectory = "" 
 		detectedChange = False
 		timeData = []
@@ -23,30 +23,34 @@ class GlobalData(): # for use in MyHandler and scanForChanges
 	pipelineData = []
 	reachedEnd = False
 
-def getParsedData():
-	return (GlobalData.timeData, GlobalData.pipelineData)
+class Direc:
+	myHandlerDirectory = "" 
+	detectedChange = False
+
+def getParsedData(glob):
+	return (glob.timeData, glob.pipelineData)
 
 class MyHandler(FileSystemEventHandler): # used to detect changes, works in tandem with scanForChanges
     def on_modified(self, event):
-	if GlobalData.detectedChange == True: # don't print more output than necessary
+	if Direc.detectedChange == True: # don't print more output than necessary
 		return
-        if event.src_path == GlobalData.myHandlerDirectory + "radical.entk.appmanager.0000.prof":
+        if event.src_path == Direc.myHandlerDirectory + "radical.entk.appmanager.0000.prof":
 		#print "appmanager has been modified" #"appmanager has been modified"
-		GlobalData.detectedChange = True
+		glob.detectedChange = True
 
-def scanForChanges(myDir):
-	GlobalData.detectedChange = False
-	GlobalData.myHandlerDirectory = myDir
+def scanForChanges(glob):
+	Direc.detectedChange = False
+	#glob.myHandlerDirectory = myDir
 
 	#print "scanning for changes in: " + myDir
 
 	event_handler = MyHandler()
 	observer = Observer()
-	observer.schedule(event_handler, path=myDir, recursive=False)
+	observer.schedule(event_handler, path=glob.myHandlerDirectory, recursive=False)
 	observer.start()
 
 	try:
-		while GlobalData.detectedChange == False:
+		while glob.detectedChange == False:
 			time.sleep(1) 
 			#print "sleep"
 		#print "returning"
@@ -58,12 +62,13 @@ def scanForChanges(myDir):
 	observer.join()
 
 
-def testReader(): # prototype for changes-scanning file parsing
+def testReader(glob): # prototype for changes-scanning file parsing
 
-	print "testReader"#, GlobalData.myHandlerDirector
+	#print "testReader" #, GlobalData.myHandlerDirectory
 
-	myDir = getConf()
-	print "return"
+	myDir = getConf(glob)
+	#print myDir, glob.myHandlerDirectory
+	#print "return"
 	if myDir == -1:
 		print("Config file is unreadable")
 		return
@@ -85,7 +90,7 @@ def testReader(): # prototype for changes-scanning file parsing
 		if row == "":
 			print "Keep scanning"
 			# we did NOT encounter the "END", so we must keep scanning until we reach the end
-			scanForChanges(myDir)
+			scanForChanges(glob)
 			linecache.checkcache(myFile) # used for when the file has been modified
 			lineCount -= 1 # go back and reread the line
 			continue
@@ -100,7 +105,7 @@ def testReader(): # prototype for changes-scanning file parsing
 
 		if eventName == "END":
 			#print "END" # we have reached the last line, we can stop scanning for changes at this point
-			GlobalData.reachedEnd = true
+			glob.reachedEnd = True
 			break
 		
 		try: # gets the cell potentially containing the pipeline, stage, or task
@@ -119,21 +124,21 @@ def testReader(): # prototype for changes-scanning file parsing
 		
 		if name == "pipeline":
 			if nameID == "0000":
-				GlobalData.pipelineData.append(eventName)
+				glob.pipelineData.append(eventName)
 				myTime = time.strftime("%H:%M:%S", time.localtime(float(epoch)))   #epoch to date format 
 				#timeData.append(myTime)
-				GlobalData.timeData.append(numElements)
+				glob.timeData.append(numElements)
 				numElements += 1
 		
 	#trace0 = go.Bar(
-	x = GlobalData.timeData
-	y = GlobalData.pipelineData
-	z = (x, y)
+	#x = GlobalData.timeData
+	#y = GlobalData.pipelineData
+	#z = (x, y)
 	#return z # an object composed of the lists timeData and pipelineData
 	return	
 
 
-def getConf():	# get data stored in configuration file, and find the directory that it points to
+def getConf(glob):	# get data stored in configuration file, and find the directory that it points to
 	with open('dashboard.conf') as conf:
 		conf.readline() # skip first line
 		row = conf.readline() # get second line, the path to the example/executable, but not the output
@@ -183,11 +188,15 @@ def getConf():	# get data stored in configuration file, and find the directory t
 		except: #  IndexError
 			return -1
 
-		if theDirectory != GlobalData.myHandlerDirectory:
-			GlobalData.reset() # make preparations for new execution
+		ret = rs + theDirectory.rstrip() + "/"
+		print "[" + ret + "][" + glob.myHandlerDirectory + "]"
+		if ret != glob.myHandlerDirectory:
+			glob.zero() # make preparations for new execution
+			print "zeroed"
 
-		GlobalData.myHandlerDirector = theDirectory
-		print GlobalData.myHandlerDirector
+		#print "before", glob.myHandlerDirectory
+		glob.myHandlerDirectory = ret
+		#print "after", glob.myHandlerDirectory
 
 		return rs + theDirectory.rstrip() + "/" # the path to the directory
 
