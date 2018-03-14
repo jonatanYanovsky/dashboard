@@ -39,15 +39,18 @@
 
 	<script>
 
+	var plottedBefore = false;
+	
 	function start() {
 		
-		//var plot = getPlotType();
-
-		var type = browserPlot();
-		//document.getElementById("plotName").innerHTML = type; // set the text above the plot
-		updatePlot();
-		//server();
-		//setInterval(server, 5000);
+		var plot = getPlotType();
+		
+		
+		browserPlot();
+		document.getElementById("plotName").innerHTML = type; // set the text above the plot
+		
+		server();
+		//setInterval(server, 10000);
 
 	}
 
@@ -61,7 +64,7 @@
 		
 		req.onload = function() {	
 			var val = JSON.parse(req.responseText);
-			updatePlot(val);
+			browserPlot(val);
 		}
 
 		var plot = getPlotType();
@@ -71,52 +74,32 @@
  		req.send("plot=" + plot);
 	}
 
-	function browserPlot() { // create empty plot
-
+	function browserPlot(values) { // create empty plot
+	
+		var xval = values[0];
+		var yval = values[1];
+		
 		var data = [{
-			x: [1,2],
-			y: [1,2],
-			type: 'bar'
+			x: [xval],
+			y: [yval],
+			type: 'scatter'
 		}];
 
+		if (plottedBefore) 
+			Plotly.purge('graph'); // clear old plot
+		
 		Plotly.newPlot('graph', data);
+		plottedBefore = true;
 	}
 
 	function updatePlot() { //values // continuously update the plot
 
-		/*var xval = values[0];
+		var xval = values[0];
 		var yval = values[1];
 
 		console.log(xval);
 		console.log(yval);
 
-		//var update = [];
-		*/
-
-		/*var pusher = {};
-		
-		var i;
-		for (i = 0; i < xval.length; i++) {
-			console.log(xval[i]);
-			console.log(yval[i]);
-			//pusher = {}; // empty it out
-			//pusher[xval[i]] = yval[i];
-			//console.log(pusher);
-			update.push({[xval[i]] : yval[i]});
-		}*/
-		/*var update = [{
-			x: [xval], 
-			y: [yval]
-		}];*/
-		var data = [{
-			x: [3, 4],
-			y: [3, 4], 
-			type: 'bar'
-		}];
-		Plotly.extendTraces('graph', data); //, 0, 20);
-		//Plotly.extendTraces('graph', {y: [[Math.random()]]}, [0])
-
-		//Plotly.extendTraces('graph', data);//{y: [[1]]}, [2]); // all together
 	}
 
 	</script>
