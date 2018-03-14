@@ -9,42 +9,49 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
 
-class GlobalData(): # for use in MyHandler and scanForChanges
-	def zero(self):
+class GlobalData(object): # for use in MyHandler and scanForChanges
+	@staticmethod
+	def zero():
 		myHandlerDirectory = "" 
 		detectedChange = False
 		timeData = []
 		pipelineData = []
 		reachedEnd = False
+		url = ""
 
 	myHandlerDirectory = "" 
 	detectedChange = False
 	timeData = []
 	pipelineData = []
 	reachedEnd = False
+	url = ""
+
+	class MyHandler(FileSystemEventHandler): # used to detect changes, works in tandem with scanForChanges
+	    def on_modified(self, event):
+		if detectedChange == True: # don't print more output than necessary
+			return
+		if event.src_path == myHandlerDirectory + "radical.entk.appmanager.0000.prof":
+			#print "appmanager has been modified" #"appmanager has been modified"
+			detectedChange = True
+
 
 class Direc:
 	myHandlerDirectory = "" 
 	detectedChange = False
+	
+	
 
 def getParsedData(glob):
 	return (glob.timeData, glob.pipelineData)
 
-class MyHandler(FileSystemEventHandler): # used to detect changes, works in tandem with scanForChanges
-    def on_modified(self, event):
-	if Direc.detectedChange == True: # don't print more output than necessary
-		return
-        if event.src_path == Direc.myHandlerDirectory + "radical.entk.appmanager.0000.prof":
-		#print "appmanager has been modified" #"appmanager has been modified"
-		glob.detectedChange = True
+
 
 def scanForChanges(glob):
-	Direc.detectedChange = False
-	#glob.myHandlerDirectory = myDir
+	glob.detectedChange = False
 
 	#print "scanning for changes in: " + myDir
 
-	event_handler = MyHandler()
+	event_handler = glob.MyHandler()
 	observer = Observer()
 	observer.schedule(event_handler, path=glob.myHandlerDirectory, recursive=False)
 	observer.start()
@@ -130,12 +137,33 @@ def testReader(glob): # prototype for changes-scanning file parsing
 				glob.timeData.append(numElements)
 				numElements += 1
 		
+	trace0 = go.Scatter(
+			x = glob.timeData,
+			y = glob.pipelineData
+		)		
+
+	data = [trace0]
+	myUrl = py.plot(data, filename='a', auto_open=False)
+	glob.url = myUrl
+	#return url
 	#trace0 = go.Bar(
 	#x = GlobalData.timeData
 	#y = GlobalData.pipelineData
 	#z = (x, y)
 	#return z # an object composed of the lists timeData and pipelineData
-	return	
+	#return	
+
+
+def extend(glob):
+
+	trace0 = go.Scatter(
+			x = [5],
+			y = ["stuff"]
+		)	
+
+	data = [trace0]
+
+	return py.plot(data, filename='a', auto_open=False, fileopt='extend')
 
 
 def getConf(glob):	# get data stored in configuration file, and find the directory that it points to

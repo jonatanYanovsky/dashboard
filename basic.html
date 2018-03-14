@@ -46,11 +46,11 @@
 		var type = getPlotType();
 		
 		
-		browserPlot();
+		//createEmpty();
 		document.getElementById("plotName").innerHTML = type; // set the text above the plot
 		
-		//server();
-		setInterval(server, 1000);
+		server();
+		setInterval(server2, 3000);
 
 	}
 
@@ -58,14 +58,20 @@
 		var type = localStorage.getItem("plot");
 		return type;
 	}
+
+	function setPlotURL(url) {
+		var iframe = "<iframe width='500' height='500' frameborder='0' scrolling='no' src='" + url + ".embed?width=500&height=500'> </iframe>"
+		document.getElementById("graph").src = url + ".embed";
+	}
 	
 	function server() { // contacts server, requests iframe
 		var req = new XMLHttpRequest(); // the request
 		
-		req.onload = function() {	
-			var val = JSON.parse(req.responseText);
-			if (val != undefined && val != "sleep")
-				browserPlot(val);
+		req.onload = function() {
+			
+			var ret = req.responseText;
+			console.log(ret);
+			setPlotURL(ret);
 		}
 
 		var plot = getPlotType();
@@ -75,25 +81,66 @@
  		req.send("plot=" + plot);
 	}
 
+	function server2(ret) { // contacts server, extends trace
+		var req = new XMLHttpRequest(); // the request
+
+		req.onload = function() {
+			
+			var ret = req.responseText;
+			console.log(ret);
+			setPlotURL(ret);
+		}
+
+		var plot = getPlotType();
+
+		req.open("POST", "http://localhost:5000/", true);
+		req.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+ 		req.send("plot=" + plot);
+	}
+
+	function createEmpty() {
+		data = [{
+			x: [],
+			y: [],
+			type: 'scatter'
+		}];
+
+		Plotly.newPlot('graph', data);
+		plottedBefore = true;
+	}
+
+
 	function browserPlot(values) { // create empty plot
+		console.log(values);
+
+		var xval;
+		var yval;
+		var data;
+
+		xval = values[0];
+		yval = values[1];
 	
-		if (values === undefined)
-			return;
- 
-		var xval = values[0];
-		var yval = values[1];
-		
-		var data = [{
+		data = [{
 			x: [xval],
 			y: [yval],
 			type: 'scatter'
 		}];
 
-		if (plottedBefore) 
-			Plotly.purge('graph'); // clear old plot
+			//if (plottedBefore) 
+				//Plotly.purge('graph'); // clear old plot
 		
+		/*else {
+			data = [{
+				x: [],
+				y: [],
+				type: 'scatter'
+			}];
+
+		}*/
+
+		//Plotly.purge('graph'); // clear old plot
 		Plotly.newPlot('graph', data);
-		plottedBefore = true;
+		//plottedBefore = true;
 	}
 
 	</script>
@@ -104,7 +151,10 @@
 
 <p id="plotName"></p>
 
-<div id="graph" style="width: 480px; height: 400px;">loading</div>
+<div class="graphDiv">
+<iframe id="graph" scrolling='no' style="width:100%; height:600px; border:none" seamless>></iframe>
+</div>
+<div id="graph">loading</div>
     
 
 </body>

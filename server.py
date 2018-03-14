@@ -4,17 +4,16 @@ from flask_cors import CORS
 import reader
 import webbrowser
 from flask import jsonify
-from multiprocessing import Pool  # from multiprocessing.dummy import Pool as ThreadPool 
 
 
+glob = reader.GlobalData()
 app = Flask(__name__)
 CORS(app)
-#webbrowser.open_new_tab("index.html")
+webbrowser.open_new_tab("index.html")
 #reader.testReader()
-pool = Pool(1)
-glob = reader.GlobalData()
-glob.zero()
-print "zeroed"
+
+#reader.GlobalData.zero()
+#print "zeroed"
 
 @app.route('/', methods=['GET', 'POST'])
 def getPlotlyURL():
@@ -36,16 +35,22 @@ def getPlotlyURL():
 			#print "dir:", glob.myHandlerDirectory
 
 			if glob.myHandlerDirectory == "": # start new
-				print "starting async"
-				r = pool.apply_async(reader.testReader, (glob,)) # runs in *only* one process
-				r.get(10) 
+				#print "starting async"
+				#r = pool.apply_async(reader.testReader, (glob,)) # runs in *only* one process
+				#r.get(10) 
+
+				reader.testReader(glob)
+				url = glob.url
 				
-   				return "sleep"
+				#print "sleep"
+   				return url #"<iframe width='1000' height='1000' frameborder='0' scrolling='no' src='" + url + ".embed?width=500&height=1000'> </iframe>"
 
 			else: # ping for data
-				ret = reader.getParsedData(glob)
-				print "ping"
-				return jsonify(ret)
+				url = reader.extend(glob)
+				return url #"<iframe width='1000' height='1000' frameborder='0' scrolling='no' src='" + url + ".embed?width=500&height=1000'> </iframe>"
+				#print ret
+				#print "ping"
+				#return jsonify(ret)
 			#ret = reader.testReader()
 			
 		
