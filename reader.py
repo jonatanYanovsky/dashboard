@@ -59,7 +59,11 @@ def scanForChanges(myDir):
 
 
 def testReader(): # prototype for changes-scanning file parsing
+
+	print "testReader"#, GlobalData.myHandlerDirector
+
 	myDir = getConf()
+	print "return"
 	if myDir == -1:
 		print("Config file is unreadable")
 		return
@@ -126,7 +130,7 @@ def testReader(): # prototype for changes-scanning file parsing
 	y = GlobalData.pipelineData
 	z = (x, y)
 	#return z # an object composed of the lists timeData and pipelineData
-		
+	return	
 
 
 def getConf():	# get data stored in configuration file, and find the directory that it points to
@@ -181,6 +185,9 @@ def getConf():	# get data stored in configuration file, and find the directory t
 
 		if theDirectory != GlobalData.myHandlerDirectory:
 			GlobalData.reset() # make preparations for new execution
+
+		GlobalData.myHandlerDirector = theDirectory
+		print GlobalData.myHandlerDirector
 
 		return rs + theDirectory.rstrip() + "/" # the path to the directory
 

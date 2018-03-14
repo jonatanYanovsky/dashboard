@@ -11,6 +11,7 @@ app = Flask(__name__)
 CORS(app)
 webbrowser.open_new_tab("index.html")
 #reader.testReader()
+pool = Pool(1)
 
 @app.route('/', methods=['GET', 'POST'])
 def getPlotlyURL():
@@ -29,13 +30,17 @@ def getPlotlyURL():
 #			url = reader.pst()
 #		
 		if req == "testReader": # ping for existing data or start new parsing
-			if reader.GlobalData.myHandlerDirectory == "": # start new
-				pool = Pool(2)
+			#print reader.GlobalData.myHandlerDirectory
+			if reader.GlobalData.myHandlerDirectory == "" and reader.GlobalData.reachedEnd != True: # start new
+				#print "starting async"
+				
 				r = pool.apply_async(reader.testReader, ()) # runs in *only* one process
-   				
+				#print "skipped async"
+   				return "sleep"
+
 			else: # ping for data
 				ret = reader.getParsedData()
-				print ret
+				print "ping"
 				return jsonify(ret)
 			#ret = reader.testReader()
 			

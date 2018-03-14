@@ -43,14 +43,14 @@
 	
 	function start() {
 		
-		var plot = getPlotType();
+		var type = getPlotType();
 		
 		
 		browserPlot();
 		document.getElementById("plotName").innerHTML = type; // set the text above the plot
 		
 		//server();
-		setInterval(server, 5000);
+		setInterval(server, 1000);
 
 	}
 
@@ -64,7 +64,8 @@
 		
 		req.onload = function() {	
 			var val = JSON.parse(req.responseText);
-			browserPlot(val);
+			if (val != undefined && val != "sleep")
+				browserPlot(val);
 		}
 
 		var plot = getPlotType();
@@ -76,6 +77,9 @@
 
 	function browserPlot(values) { // create empty plot
 	
+		if (values === undefined)
+			return;
+ 
 		var xval = values[0];
 		var yval = values[1];
 		
@@ -90,16 +94,6 @@
 		
 		Plotly.newPlot('graph', data);
 		plottedBefore = true;
-	}
-
-	function updatePlot() { //values // continuously update the plot
-
-		var xval = values[0];
-		var yval = values[1];
-
-		console.log(xval);
-		console.log(yval);
-
 	}
 
 	</script>
