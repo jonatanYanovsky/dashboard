@@ -22,14 +22,17 @@ def getPlotlyURL():
 		if req == "testReader": # client-side is asking for plot url
 			
 			if glob.reachedEnd == False:
+				print "parse"
 				reader.testReader(glob) # do parsing only if not done
 
 			if glob.hasBeenModified == True: # new data appeared
 				reader.doGraphing(glob)
 				url = glob.url
+				print "return url"
 				return url
 
 			else: # we have not seen any new data
+				print "return sleep"
 				return "sleep" # don't refresh iframe on client-side
 
 		else:

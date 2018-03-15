@@ -22,6 +22,9 @@ class GlobalData(object): # for use in MyHandler and scanForChanges
 		url = ""
 		hasBeenModified = False
 		newPlot = True
+		startTime = 0
+		limit = 3
+		stop = False
 
 	#@staticmethod
 
@@ -36,51 +39,67 @@ class GlobalData(object): # for use in MyHandler and scanForChanges
 	url = ""
 	hasBeenModified = False
 	newPlot = True
+	startTime = 0
+	limit = 3 # seconds
+	stop = False # abort
+	
 
-	class MyHandler(FileSystemEventHandler): # used to detect changes, works in tandem with scanForChanges
-	    def on_modified(self, event):
-		if detectedChange == True: # don't print more output than necessary
+
+class MyHandler(FileSystemEventHandler): # used to detect changes, works in tandem with scanForChanges
+	def on_modified(self, event):
+
+		if self.detectedChange == True: # don't print more output than necessary
 			return
-		if event.src_path == myHandlerDirectory + "radical.entk.appmanager.0000.prof":
-			#print "appmanager has been modified" #"appmanager has been modified"
-			detectedChange = True
 
+		if event.src_path == self.myHandlerDirectory + "radical.entk.appmanager.0000.prof":
+			print "detected change" 
+			self.detectedChange = True
 
-class Direc:
 	myHandlerDirectory = "" 
 	detectedChange = False
-	
-	
-
-def getParsedData(glob):
-	return (glob.timeData, glob.pipelineData)
-
 
 
 def scanForChanges(glob):
+
+	if glob.stop == True:
+		return
+
 	glob.detectedChange = False
 
 	#print "scanning for changes in: " + myDir
 
-	event_handler = glob.MyHandler()
+	event_handler = MyHandler()
+	event_handler.myHandlerDirectory = glob.myHandlerDirectory
+
 	observer = Observer()
 	observer.schedule(event_handler, path=glob.myHandlerDirectory, recursive=False)
 	observer.start()
 
 	try:
-		while glob.detectedChange == False:
+		while event_handler.detectedChange == False:
 			time.sleep(1) 
-			#print "sleep"
+			
+			print "scanning for changes, time = "
+			t = time.time() - glob.startTime
+			print t
+			if t > glob.limit:
+				print "time limit reached, returning"
+				break
 		#print "returning"
 		observer.stop()
 		observer.join()
 		return
+
 	except KeyboardInterrupt:
+		glob.stop = True
 		observer.stop()
-	observer.join()
+		observer.join()
+		return
 
 
 def testReader(glob): # prototype for changes-scanning file parsing
+
+	glob.startTime = time.time()
 
 	#print "testReader" #, GlobalData.myHandlerDirectory
 	if glob.myHandlerDirectory != "":
@@ -116,6 +135,20 @@ def testReader(glob): # prototype for changes-scanning file parsing
 			print "Keep scanning"
 			# we did NOT encounter the "END", so we must keep scanning until we reach the end
 			scanForChanges(glob)
+
+			t = time.time() - glob.startTime
+			print "parser, time: "
+			print t
+			
+			if t > glob.limit:
+				print "time limit reached, returning"
+				return
+
+			if glob.stop == True:
+				print "aborting"
+				glob.reachedEnd = True
+				return
+
 			linecache.checkcache(myFile) # used for when the file has been modified
 			lineCount -= 1 # go back and reread the line
 			continue
@@ -159,6 +192,9 @@ def testReader(glob): # prototype for changes-scanning file parsing
 				
 	
 def doGraphing(glob):
+	clean(glob)
+	return glob
+
 	if glob.newPlot:
 		newPlot(glob)
 	else:
@@ -247,8 +283,8 @@ def getConf(glob):	# get data stored in configuration file, and find the directo
 
 		ret = rs + theDirectory.rstrip() + "/"
 		#print "[" + ret + "][" + glob.myHandlerDirectory + "]"
-		if ret != glob.myHandlerDirectory:
-			glob.zero() # make preparations for new execution
+		#if ret != glob.myHandlerDirectory:
+		#	glob.zero() # make preparations for new execution
 			#print "zeroed"
 
 		#print "before", glob.myHandlerDirectory
