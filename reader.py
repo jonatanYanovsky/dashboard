@@ -10,21 +10,32 @@ from watchdog.events import FileSystemEventHandler
 
 
 class GlobalData(object): # for use in MyHandler and scanForChanges
-	@staticmethod
-	def zero():
+	#@staticmethod
+	def zero(self):
 		myHandlerDirectory = "" 
 		detectedChange = False
 		timeData = []
 		pipelineData = []
+		#newData = []
+		lineNum = []
 		reachedEnd = False
 		url = ""
+		hasBeenModified = False
+		newPlot = True
+
+	#@staticmethod
+
 
 	myHandlerDirectory = "" 
 	detectedChange = False
 	timeData = []
 	pipelineData = []
+	#newData = []
+	lineNum = []
 	reachedEnd = False
 	url = ""
+	hasBeenModified = False
+	newPlot = True
 
 	class MyHandler(FileSystemEventHandler): # used to detect changes, works in tandem with scanForChanges
 	    def on_modified(self, event):
@@ -72,10 +83,17 @@ def scanForChanges(glob):
 def testReader(glob): # prototype for changes-scanning file parsing
 
 	#print "testReader" #, GlobalData.myHandlerDirectory
+	if glob.myHandlerDirectory != "":
+		myDir = glob.myHandlerDirectory # continue from last file
+		lineCount = glob.lineNum # start at last line number
+		glob.newPlot = False # update existing plot
+	else:
+		myDir = getConf(glob) # start fresh
+		lineCount = 1
 
-	myDir = getConf(glob)
 	#print myDir, glob.myHandlerDirectory
 	#print "return"
+
 	if myDir == -1:
 		print("Config file is unreadable")
 		return
@@ -84,8 +102,8 @@ def testReader(glob): # prototype for changes-scanning file parsing
 
 	#print "opening file: " + myFile
 
-	lineCount = 1
-	numElements = 1
+	
+	numElements = 1 # TODO: fix x axis
 
 
 	while 1: # read every line in the file
@@ -110,8 +128,10 @@ def testReader(glob): # prototype for changes-scanning file parsing
 		except:
 			eventName = -1
 
+		glob.lineNum = lineCount
+
 		if eventName == "END":
-			#print "END" # we have reached the last line, we can stop scanning for changes at this point
+			print "END" # we have reached the last line, we can stop scanning for changes at this point
 			glob.reachedEnd = True
 			break
 		
@@ -133,38 +153,47 @@ def testReader(glob): # prototype for changes-scanning file parsing
 			if nameID == "0000":
 				glob.pipelineData.append(eventName)
 				myTime = time.strftime("%H:%M:%S", time.localtime(float(epoch)))   #epoch to date format 
-				#timeData.append(myTime)
 				glob.timeData.append(numElements)
 				numElements += 1
-		
+				glob.hasBeenModified = True
+				
+	
+def doGraphing(glob):
+	if glob.newPlot:
+		newPlot(glob)
+	else:
+		extend(glob)
+
+	clean(glob)
+
+
+def clean(glob): # don't return a url again until there are new changes
+	glob.timeData = []
+	glob.pipelineData = []
+	glob.hasBeenModified = False
+
+
+def newPlot(glob):
 	trace0 = go.Scatter(
 			x = glob.timeData,
 			y = glob.pipelineData
-		)		
+		)	
 
 	data = [trace0]
 	myUrl = py.plot(data, filename='a', auto_open=False)
 	glob.url = myUrl
-	#return url
-	#trace0 = go.Bar(
-	#x = GlobalData.timeData
-	#y = GlobalData.pipelineData
-	#z = (x, y)
-	#return z # an object composed of the lists timeData and pipelineData
-	#return	
+	return
 
 
 def extend(glob):
-
 	trace0 = go.Scatter(
-			x = [5],
-			y = ["stuff"]
-		)	
+			x = glob.timeData,
+			y = glob.pipelineData
+		)
 
 	data = [trace0]
-
-	return py.plot(data, filename='a', auto_open=False, fileopt='extend')
-
+	py.plot(data, filename='a', auto_open=False, fileopt='extend')
+	return
 
 def getConf(glob):	# get data stored in configuration file, and find the directory that it points to
 	with open('dashboard.conf') as conf:
@@ -217,10 +246,10 @@ def getConf(glob):	# get data stored in configuration file, and find the directo
 			return -1
 
 		ret = rs + theDirectory.rstrip() + "/"
-		print "[" + ret + "][" + glob.myHandlerDirectory + "]"
+		#print "[" + ret + "][" + glob.myHandlerDirectory + "]"
 		if ret != glob.myHandlerDirectory:
 			glob.zero() # make preparations for new execution
-			print "zeroed"
+			#print "zeroed"
 
 		#print "before", glob.myHandlerDirectory
 		glob.myHandlerDirectory = ret

@@ -50,7 +50,7 @@
 		document.getElementById("plotName").innerHTML = type; // set the text above the plot
 		
 		server();
-		setInterval(server2, 3000);
+		setInterval(server, 3000);
 
 	}
 
@@ -71,7 +71,8 @@
 			
 			var ret = req.responseText;
 			console.log(ret);
-			setPlotURL(ret);
+			if (ret != "sleep")
+				setPlotURL(ret);
 		}
 
 		var plot = getPlotType();

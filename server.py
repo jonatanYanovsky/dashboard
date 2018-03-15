@@ -12,16 +12,32 @@ CORS(app)
 webbrowser.open_new_tab("index.html")
 #reader.testReader()
 
-#reader.GlobalData.zero()
-#print "zeroed"
 
 @app.route('/', methods=['GET', 'POST'])
 def getPlotlyURL():
 	if request.method == 'POST':		
 		
 	    	req = request.form['plot']
-		url = ""
 		
+		if req == "testReader": # client-side is asking for plot url
+			
+			if glob.reachedEnd == False:
+				reader.testReader(glob) # do parsing only if not done
+
+			if glob.hasBeenModified == True: # new data appeared
+				reader.doGraphing(glob)
+				url = glob.url
+				return url
+
+			else: # we have not seen any new data
+				return "sleep" # don't refresh iframe on client-side
+
+		else:
+			print "invalid: " + req 
+	    		return "<p>Invalid Syntax</p>" 
+
+
+
 #	    	if req == "timeseries":
 #	    		url = reader.timeseries()
 #			
@@ -31,32 +47,32 @@ def getPlotlyURL():
 #		elif req == "pst":
 #			url = reader.pst()
 #		
-		if req == "testReader": # ping for existing data or start new parsing
-			#print "dir:", glob.myHandlerDirectory
+ 
 
-			if glob.myHandlerDirectory == "": # start new
-				#print "starting async"
-				#r = pool.apply_async(reader.testReader, (glob,)) # runs in *only* one process
-				#r.get(10) 
+			#if glob.myHandlerDirectory == "": # start new
+			#print "starting async"
+			#r = pool.apply_async(reader.testReader, (glob,)) # runs in *only* one process
+			#r.get(10) 
 
-				reader.testReader(glob)
-				url = glob.url
 				
-				#print "sleep"
-   				return url #"<iframe width='1000' height='1000' frameborder='0' scrolling='no' src='" + url + ".embed?width=500&height=1000'> </iframe>"
 
-			else: # ping for data
-				url = reader.extend(glob)
-				return url #"<iframe width='1000' height='1000' frameborder='0' scrolling='no' src='" + url + ".embed?width=500&height=1000'> </iframe>"
+			#glob.hasBeenModified = False
+				
+			 #return "<iframe width='1000' height='1000' frameborder='0' scrolling='no' src='" + url + ".embed?width=500&height=1000'> </iframe>"
+
+			#else: # ping for data
+				
+			#	url = glob.url
+				
+			#	return url 
+				#"<iframe width='1000' height='1000' frameborder='0' scrolling='no' src='" + url + ".embed?width=500&height=1000'> </iframe>"
 				#print ret
 				#print "ping"
 				#return jsonify(ret)
 			#ret = reader.testReader()
 			
 		
-		else:
-			print("invalid: " + req)
-	    		return "<p>Invalid Syntax</p>"  
+
 
 		#return "<iframe width='640' height='480' frameborder='0' scrolling='no' src='" + url + ".embed?width=640&height=480'> </iframe>"
 		
