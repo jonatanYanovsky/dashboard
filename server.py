@@ -4,6 +4,7 @@ from flask_cors import CORS
 import reader
 import webbrowser
 from flask import jsonify
+import os
 
 
 glob = reader.GlobalData()
@@ -21,6 +22,10 @@ def getPlotlyURL():
 		
 		if req == "testReader": # client-side is asking for plot url
 			
+			if glob.stop == True:
+				#shutdown_server()
+				os._exit(1)
+
 			if glob.reachedEnd == False:
 				print "parse"
 				reader.testReader(glob) # do parsing only if not done
@@ -28,12 +33,23 @@ def getPlotlyURL():
 			if glob.hasBeenModified == True: # new data appeared
 				reader.doGraphing(glob)
 				url = glob.url
-				print "return url"
+				print "return new url - performed graphing: " + url
 				return url
 
 			else: # we have not seen any new data
-				print "return sleep"
-				return "sleep" # don't refresh iframe on client-side
+				url = glob.url
+
+				if url == "": 
+					if glob.reachedEnd == True:
+						glob.zero()
+						print "Your EnTK execution probably crashed. Restart it."
+						return "sleep"
+					else:
+						print "We haven't yet found any meaningful data, please wait for the EnTK execution to continue"
+						return "sleep"
+				else:
+					print "return sleep - no new graphing" 
+					return "sleep" # don't refresh iframe on client-side
 
 		else:
 			print "invalid: " + req 

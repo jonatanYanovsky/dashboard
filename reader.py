@@ -5,26 +5,29 @@ import plotly.plotly as py
 import plotly.graph_objs as go
 import os
 import linecache
+#import sys
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
 
 class GlobalData(object): # for use in MyHandler and scanForChanges
-	#@staticmethod
+
 	def zero(self):
-		myHandlerDirectory = "" 
-		detectedChange = False
-		timeData = []
-		pipelineData = []
+		self.myHandlerDirectory = "" 
+		self.detectedChange = False
+		self.timeData = []
+		self.pipelineData = []
+		self.stateDict = []
+		self.states = []
 		#newData = []
-		lineNum = []
-		reachedEnd = False
-		url = ""
-		hasBeenModified = False
-		newPlot = True
-		startTime = 0
-		limit = 3
-		stop = False
+		self.lineNum = []
+		self.reachedEnd = False
+		self.url = ""
+		self.hasBeenModified = False
+		self.newPlot = True
+		self.startTime = 0
+		self.limit = 3
+		self.stop = False
 
 	#@staticmethod
 
@@ -33,6 +36,8 @@ class GlobalData(object): # for use in MyHandler and scanForChanges
 	detectedChange = False
 	timeData = []
 	pipelineData = []
+	stateDict = []
+	states = []
 	#newData = []
 	lineNum = []
 	reachedEnd = False
@@ -78,10 +83,9 @@ def scanForChanges(glob):
 	try:
 		while event_handler.detectedChange == False:
 			time.sleep(1) 
-			
-			print "scanning for changes, time = "
 			t = time.time() - glob.startTime
-			print t
+			print "scanning for changes, time = " + str(t)
+			
 			if t > glob.limit:
 				print "time limit reached, returning"
 				break
@@ -105,7 +109,7 @@ def testReader(glob): # prototype for changes-scanning file parsing
 	if glob.myHandlerDirectory != "":
 		myDir = glob.myHandlerDirectory # continue from last file
 		lineCount = glob.lineNum # start at last line number
-		glob.newPlot = False # update existing plot
+		#glob.newPlot = False # update existing plot
 	else:
 		myDir = getConf(glob) # start fresh
 		lineCount = 1
@@ -137,8 +141,7 @@ def testReader(glob): # prototype for changes-scanning file parsing
 			scanForChanges(glob)
 
 			t = time.time() - glob.startTime
-			print "parser, time: "
-			print t
+			print "parser, time: " + str(t)
 			
 			if t > glob.limit:
 				print "time limit reached, returning"
@@ -182,21 +185,24 @@ def testReader(glob): # prototype for changes-scanning file parsing
 		except:
 			continue
 		
-		if name == "pipeline":
+		if name == "task":
 			if nameID == "0000":
-				glob.pipelineData.append(eventName)
-				myTime = time.strftime("%H:%M:%S", time.localtime(float(epoch)))   #epoch to date format 
-				glob.timeData.append(numElements)
-				numElements += 1
-				glob.hasBeenModified = True
+				if eventName.find("publishing sync ack for obj with state") != -1:
+					#if eventName not in glob.states:
+					glob.states.append(eventName)
+					 
+					glob.timeData.append(numElements)
+					#numElements += 1
+					glob.hasBeenModified = True
 				
 	
 def doGraphing(glob):
-	clean(glob)
-	return glob
+	#print "Plots disabled |\--/||\--/||\--/||\--/|"
+	#clean(glob)
+	#return
 
-	if glob.newPlot:
-		newPlot(glob)
+	if glob.newPlot == True:
+		createPlot(glob)
 	else:
 		extend(glob)
 
@@ -207,24 +213,29 @@ def clean(glob): # don't return a url again until there are new changes
 	glob.timeData = []
 	glob.pipelineData = []
 	glob.hasBeenModified = False
+	#stateDict = dict()
+	glob.states = []
 
 
-def newPlot(glob):
+def createPlot(glob):
 	trace0 = go.Scatter(
-			x = glob.timeData,
-			y = glob.pipelineData
-		)	
+			x = glob.states,
+			y = glob.timeData
+		)
 
 	data = [trace0]
 	myUrl = py.plot(data, filename='a', auto_open=False)
+	print "url: " + myUrl
 	glob.url = myUrl
+	glob.newPlot = False
 	return
 
 
 def extend(glob):
+
 	trace0 = go.Scatter(
-			x = glob.timeData,
-			y = glob.pipelineData
+			x = glob.states,
+			y = glob.timeData
 		)
 
 	data = [trace0]

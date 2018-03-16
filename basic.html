@@ -42,16 +42,10 @@
 	var plottedBefore = false;
 	
 	function start() {
-		
 		var type = getPlotType();
-		
-		
-		//createEmpty();
 		document.getElementById("plotName").innerHTML = type; // set the text above the plot
 		
-		server();
 		setInterval(server, 3000);
-
 	}
 
 	function getPlotType() { 
@@ -60,10 +54,21 @@
 	}
 
 	function setPlotURL(url) {
-		var iframe = "<iframe width='500' height='500' frameborder='0' scrolling='no' src='" + url + ".embed?width=500&height=500'> </iframe>"
-		document.getElementById("graph").src = url + ".embed";
+		document.getElementById("graph1").src = url + ".embed";
+		//url = "https://plot.ly/~Satguide2012/40";
 	}
-	
+
+	function checkURL(url) {
+
+		var garbage = "<!DOCTYPE HTML PUBLIC";
+
+		if(url.indexOf(garbage) === -1 && url !== "sleep" && url !== "") {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
 	function server() { // contacts server, requests iframe
 		var req = new XMLHttpRequest(); // the request
 		
@@ -71,7 +76,8 @@
 			
 			var ret = req.responseText;
 			console.log(ret);
-			if (ret != "sleep")
+
+			if (checkURL(ret))
 				setPlotURL(ret);
 		}
 
@@ -80,68 +86,6 @@
 		req.open("POST", "http://localhost:5000/", true);
 		req.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
  		req.send("plot=" + plot);
-	}
-
-	function server2(ret) { // contacts server, extends trace
-		var req = new XMLHttpRequest(); // the request
-
-		req.onload = function() {
-			
-			var ret = req.responseText;
-			console.log(ret);
-			setPlotURL(ret);
-		}
-
-		var plot = getPlotType();
-
-		req.open("POST", "http://localhost:5000/", true);
-		req.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
- 		req.send("plot=" + plot);
-	}
-
-	function createEmpty() {
-		data = [{
-			x: [],
-			y: [],
-			type: 'scatter'
-		}];
-
-		Plotly.newPlot('graph', data);
-		plottedBefore = true;
-	}
-
-
-	function browserPlot(values) { // create empty plot
-		console.log(values);
-
-		var xval;
-		var yval;
-		var data;
-
-		xval = values[0];
-		yval = values[1];
-	
-		data = [{
-			x: [xval],
-			y: [yval],
-			type: 'scatter'
-		}];
-
-			//if (plottedBefore) 
-				//Plotly.purge('graph'); // clear old plot
-		
-		/*else {
-			data = [{
-				x: [],
-				y: [],
-				type: 'scatter'
-			}];
-
-		}*/
-
-		//Plotly.purge('graph'); // clear old plot
-		Plotly.newPlot('graph', data);
-		//plottedBefore = true;
 	}
 
 	</script>
@@ -153,9 +97,9 @@
 <p id="plotName"></p>
 
 <div class="graphDiv">
-<iframe id="graph" scrolling='no' style="width:100%; height:600px; border:none" seamless>></iframe>
+<iframe id="graph1" scrolling='no' style="width:100%; height:600px; border:none" seamless></iframe>
+<!--<iframe id="graph2" scrolling='no' style="width:0; height:0; border:none" seamless></iframe>-->
 </div>
-<div id="graph">loading</div>
     
 
 </body>
