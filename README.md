@@ -6,7 +6,7 @@ Note: Check out the Wiki for installation instructions.
 
 Google docs showcasing our progress: (top is most recent)
 
-- [Goals for the week of 3/17](https://docs.google.com/document/d/1fvsyZ8lk9Jx7x8onHAF49ifZXo1ZG1RdNqbj3ftkG5o/edit?usp=sharing)
+- [Goals for the week of 3/17](https://drive.google.com/open?id=1KxBHDsVgSSHWUAYQ_hb-PGTWKh2hHIRAp8w8dGQsdB4)
 - [Goals for the week of 3/9](https://docs.google.com/document/d/1aw9DdvGQbZlzKdDZiNioYouqSQemqv14cpGpyQviM8M/edit?usp=sharing)
 - [Difficulties in Project Development](https://docs.google.com/document/d/1J55yu61a-p80qsEXfc1Szily2n9A5jHgQXhDU0G9ayw/edit?usp=sharing)
 - [Outlook of the Website](https://docs.google.com/document/d/14gEB7AsSpiYN-ZpoLaFJixrwqIKFymB76tpMFwCzzkU/edit?usp=sharing)
