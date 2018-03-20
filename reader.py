@@ -8,6 +8,7 @@ import linecache
 #import sys
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+from bokeh.plotting import figure
 
 
 class GlobalData(object): # for use in MyHandler and scanForChanges
@@ -201,6 +202,10 @@ def doGraphing(glob):
 	#clean(glob)
 	#return
 
+	plot = figure(plot_width=400, plot_height=400)
+	plot.circle([1, 2, 3, 4, 5], [6, 7, 2, 4, 5], size=20, color="navy", alpha=0.5)
+	return plot
+
 	if glob.newPlot == True:
 		createPlot(glob)
 	else:
@@ -218,6 +223,9 @@ def clean(glob): # don't return a url again until there are new changes
 
 
 def createPlot(glob):
+
+	
+
 	trace0 = go.Scatter(
 			x = glob.states,
 			y = glob.timeData

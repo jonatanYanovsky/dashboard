@@ -5,8 +5,12 @@
 	<title>RADICAL dashboard</title>
 	<meta charset="UTF-8">
 	
-	<!-- import Plotly.js -->
-	<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+	<!-- <link href="http://cdn.pydata.org/bokeh/release/bokeh-0.12.5.min.css" rel="stylesheet">
+	<link href="http://cdn.pydata.org/bokeh/release/bokeh-widgets-0.12.0.min.css" rel="stylesheet">
+
+
+	 import Plotly.js
+	<script src="https://cdn.plot.ly/plotly-latest.min.js"></script> -->
 </head>
 
 <body onload="start()">
@@ -54,14 +58,14 @@
 	}
 
 	function setPlotURL(url) {
-		document.getElementById("graph1").src = url + ".embed";
+		document.getElementById("graph1").srcdoc = url;
 		//url = "https://plot.ly/~Satguide2012/40";
 	}
 
 	function checkURL(url) {
 
 		var garbage = "<!DOCTYPE HTML PUBLIC";
-
+		// if does not contain garbage, etc
 		if(url.indexOf(garbage) === -1 && url !== "sleep" && url !== "") {
 			return true;
 		} else {

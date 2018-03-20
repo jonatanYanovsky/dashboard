@@ -1,9 +1,10 @@
-from flask import Flask
+from flask import Flask, render_template
 from flask import request
 from flask_cors import CORS
 import reader
 import webbrowser
 from flask import jsonify
+from bokeh.embed import components
 import os
 
 
@@ -21,7 +22,12 @@ def getPlotlyURL():
 	    	req = request.form['plot']
 		
 		if req == "testReader": # client-side is asking for plot url
-			
+			print "got request"
+			plot = reader.doGraphing(glob)
+			div, script = components(plot)
+			return render_template("frame.html", the_div=div, the_script=script)
+			#os._exit(1) # tests!!
+
 			if glob.stop == True:
 				#shutdown_server()
 				os._exit(1)
@@ -34,7 +40,7 @@ def getPlotlyURL():
 				reader.doGraphing(glob)
 				url = glob.url
 				print "return new url - performed graphing: " + url
-				return url
+				return url # 
 
 			else: # we have not seen any new data
 				url = glob.url
