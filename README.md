@@ -6,6 +6,8 @@ Note: Check out the Wiki for installation instructions.
 
 Google docs showcasing our progress: (top is most recent)
 
+- [Presentation 2](https://docs.google.com/presentation/d/1bbHIWt2cjTvsoXg3_LNjhjpxHrm2s1wGMIgsziji1Ow/edit?usp=sharing)
+- [Literature Review - Analytics Dashboard](https://docs.google.com/document/d/19ua1AzgES4m9dC6rw0sFWqCqmzvfgIX958Rp-nXIaKs/edit?usp=sharing)
 - [Goals for the week of 3/17](https://drive.google.com/open?id=1KxBHDsVgSSHWUAYQ_hb-PGTWKh2hHIRAp8w8dGQsdB4)
 - [Goals for the week of 3/9](https://drive.google.com/open?id=1G12fOxjjpa2FJU9JVTPE__x5al4yOu-MwMjH66ogPm8)
 - [Difficulties in Project Development](https://docs.google.com/document/d/1J55yu61a-p80qsEXfc1Szily2n9A5jHgQXhDU0G9ayw/edit?usp=sharing)
