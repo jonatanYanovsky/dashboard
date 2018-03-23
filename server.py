@@ -12,7 +12,6 @@ glob = reader.GlobalData()
 app = Flask(__name__)
 CORS(app)
 webbrowser.open_new_tab("index.html")
-#reader.testReader()
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -22,12 +21,10 @@ def getPlotlyURL():
 	    	req = request.form['plot']
 		
 		if req == "testReader": # client-side is asking for plot url
-			print "got request"
-			plot = reader.doGraphing(glob)
-			div, script = components(plot)
-			return render_template("frame.html", the_div=div, the_script=script)
-			#os._exit(1) # tests!!
-
+			#plot = reader.doGraphing(glob)
+			#div, script = components(plot)
+			#return render_template("frame.html", the_div=div, the_script=script)
+		
 			if glob.stop == True:
 				#shutdown_server()
 				os._exit(1)
@@ -37,10 +34,10 @@ def getPlotlyURL():
 				reader.testReader(glob) # do parsing only if not done
 
 			if glob.hasBeenModified == True: # new data appeared
-				reader.doGraphing(glob)
-				url = glob.url
-				print "return new url - performed graphing: " + url
-				return url # 
+				print "performed graphing"
+				plot = reader.doGraphing(glob)
+				div, script = components(plot)
+				return render_template("frame.html", the_div=div, the_script=script)
 
 			else: # we have not seen any new data
 				url = glob.url

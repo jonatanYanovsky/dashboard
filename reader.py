@@ -9,7 +9,8 @@ import linecache
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from bokeh.plotting import figure
-
+from bokeh.models import ColumnDataSource, FactorRange, ranges
+import pandas
 
 class GlobalData(object): # for use in MyHandler and scanForChanges
 
@@ -202,16 +203,15 @@ def doGraphing(glob):
 	#clean(glob)
 	#return
 
-	plot = figure(plot_width=400, plot_height=400)
-	plot.circle([1, 2, 3, 4, 5], [6, 7, 2, 4, 5], size=20, color="navy", alpha=0.5)
-	return plot
-
-	if glob.newPlot == True:
-		createPlot(glob)
-	else:
-		extend(glob)
-
-	clean(glob)
+	p = createPlot(glob)
+	glob.hasBeenModified = False
+	return p
+#	if glob.newPlot == True:
+#		createPlot(glob)
+#	else:
+#		extend(glob)
+#
+#	clean(glob)
 
 
 def clean(glob): # don't return a url again until there are new changes
@@ -224,6 +224,75 @@ def clean(glob): # don't return a url again until there are new changes
 
 def createPlot(glob):
 
+#	for z in glob.states:
+#		print z
+#	for z in glob.timeData:
+#		print z
+
+	p = figure(x_range=glob.states, plot_height=400, plot_width=800, title="testReader",
+		   toolbar_location=None, tools="")
+	p.line(x=glob.states, y=glob.timeData)
+	p.y_range.start = 0
+	p.xgrid.grid_line_color = None
+	p.xaxis.major_label_orientation = 1
+	p.min_border_left = 100
+	return p
+
+	fruits = ['Apples', 'Pears', 'Nectarines', 'Plums', 'Grapes', 'Strawberries']
+
+	p = figure(x_range=fruits, plot_height=250, title="Fruit Counts",
+		   toolbar_location=None, tools="")
+
+	p.line(x=fruits, y=[5, 3, 4, 2, 4, 6])
+
+	p.xgrid.grid_line_color = None
+	p.y_range.start = 0
+	p.xaxis.major_label_orientation = 1
+	return p
+
+
+
+
+
+#	fruits = ['Apples', 'Pears', 'Nectarines', 'Plums', 'Grapes', 'Strawberries']
+#
+#	p = figure(x_range=fruits, plot_height=250, title="Fruit Counts",
+#		   toolbar_location=None, tools="")
+#
+#	p.line(x=fruits, y=[5, 3, 4, 2, 4, 6])
+#
+#	p.xgrid.grid_line_color = None
+#	p.y_range.start = 0
+#	return p
+
+	#dat = pandas.DataFrame([['A',20],['B',20],['C',30]], columns=['category','amount'])
+	#plot = figure(plot_width=600, plot_height=300, x_range=FactorRange(factors=list(dat.category))
+	#print dat
+	#print dat.category
+	#source = ColumnDataSource(data=dict(x=dat.category, y=dat.amount))
+
+	#plot.vbar(source=source,x='x',top='y',bottom=0,width=0.3)
+        #plot.x_range.factors = list(source.data['x'])
+	#return plot
+
+	plot = figure(plot_width=600, plot_height=300, x_axis_label="states", y_axis_label="task #", x_range=FactorRange(factors=list(dat.category)))
+
+	fruits = ['Apples', 'Pears', 'Nectarines', 'Plums', 'Grapes', 'Strawberries']
+
+	p = figure(x_range=fruits, plot_height=250, title="Fruit Counts",
+           toolbar_location=None, tools="")
+
+	p.vbar(x=fruits, top=[5, 3, 4, 2, 4, 6], width=0.9)
+	return p
+
+	plot = figure(x_range=glob.states, plot_width=400, plot_height=400)
+
+	#plot = figure(plot_width=400, plot_height=400)
+	source = ColumnDataSource(data=dict(x=glob.states, top=glob.timeData))
+
+	plot.vbar(x='glob.states', top='glob.timeData', width=0.9, source=source)
+	#plot.circle([1, 2, 3, 4, 5], [6, 7, 2, 4, 5], size=20, color="navy", alpha=0.5)
+	return plot # width=0.9
 	
 
 	trace0 = go.Scatter(
