@@ -53,20 +53,22 @@ class GlobalData(object): # for use in MyHandler and scanForChanges
 	stop = False # abort
 	
 	task_state_values = {
-		'INITIAL': 1,
-		'SCHEDULING': 2,
-		'SCHEDULED': 3,
-		'SUBMITTING': 4,
-		'SUBMITTED': 5,
-		'COMPLETED': 6,
-		'DEQUEUEING': 7,
-		'DEQUEUED': 8,
-		'SYNCHRONIZING': 9,
-		'SYNCHRONIZED': 10,
-		'DONE': 11,
-		'FAILED': 12,
-		'CANCELED': 13
+		'SCHEDULING': 0,
+		'SCHEDULED': 1,
+		'SUBMITTING': 2,
+		'SUBMITTED': 3,
+		'EXECUTED': 4,
+		'DEQUEUEING': 5,
+		'DEQUEUED': 6,
+		'DONE': 7,
+		'FAILED': 8,
+		'CANCELED': 9
 	}
+	taskStates = []
+	taskStatesTotal = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+	lastIndex = 0
+	newIndex = 0
+	
 
 
 class MyHandler(FileSystemEventHandler): # used to detect changes, works in tandem with scanForChanges
@@ -195,16 +197,23 @@ def testReader(glob): # prototype for changes-scanning file parsing
 		
 		if name == "task":
 			#if nameID == "0000":
-			if eventName.find("publishing sync ack for obj with state") != -1:
-				# trim the start of this string:
-				event = eventName.split()
-				print event[-1] # get last element - state description
-				
-				#glob.states.append(eventName)
-				 
-				glob.timeData.append(numElements)
-				glob.hasBeenModified = True
 			
+			if eventName.find("publishing sync ack for obj with state") != -1:
+				event = eventName.split()
+				event = event[-1]
+			if eventName.find("received obj with state") != -1:
+				event = eventName.split()
+				# trim the start of this string:
+				#event = eventName.split()
+				event = event[4]
+				#print event[-1] # get last element - state description
+				
+				#glob.timeData.append(numElements)
+			glob.hasBeenModified = True
+			eventNum = glob.task_state_values[event]
+			stateList = [nameID, eventNum]
+			glob.taskStates.append(stateList)
+			glob.newIndex += 1
 	
 def doGraphing(glob):
 	#print "Plots disabled |\--/||\--/||\--/||\--/|"
@@ -220,52 +229,52 @@ def doGraphing(glob):
 
 def createPlot(glob):
 
-	xx = [1, 2, 3, 4, 5]
-	yy = [1, 1, 1, 1, 1] # height
+	# go through new collected data and add it to the taskStatesTotal (= y axis data) array
+	# assume there is new data
+	item = []
+	while glob.lastIndex < glob.newIndex:
+		item = glob.taskStates[glob.lastIndex]
+		print item
+		glob.lastIndex += 1
+		glob.taskStatesTotal[item[1]] += 1
+
+	xx = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+	yy = glob.taskStatesTotal
+	#yy = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] # height
 	
 	
 
 	p = figure(plot_height=400, plot_width=800, title="testReader", toolbar_location=None, tools="")
-	p.line(x=xx, y=yy)
+	#p.vbar(x=xx, y=yy, left=0.5, right=0.5)
+	p.vbar(x=xx, width=0.95, bottom=0, top=yy, color="#CAB2D6")
 	p.xaxis.visible = False # This axis is broken, so hide it.
+	p.yaxis.visible = False # get rid of minor ticks
 
 	ticker = SingleIntervalTicker(interval=1, num_minor_ticks=0)
 	xaxis = LinearAxis(ticker=ticker)
 	p.add_layout(xaxis, 'below') # add a new x-axis which works properly (no 1.5, 2.5, etc ticks)
+	yaxis = LinearAxis(ticker=ticker)
+	p.add_layout(yaxis, 'left') # add a new y-axis which works properly (no 1.5, 2.5, etc ticks)
 
 	p.y_range.start = 0
 	p.xgrid.grid_line_color = None
 	p.xaxis.major_label_orientation = 1
-	p.min_border_left = 100 # padding to display labels cleanly
+	#p.min_border_left = 100 # padding to display labels cleanly
 
 	p.xaxis.minor_tick_line_color = None  # turn off x-axis minor ticks
-
-#    INITIAL: 1
-#    SCHEDULING: 2
-#    SCHEDULED: 3
-#    SUBMITTING: 4
-#    SUBMITTED: 5
-#    COMPLETED: 6
-#    DEQUEUEING: 7
-#    DEQUEUED: 8
-#    SYNCHRONIZING: 9
-#    SYNCHRONIZED: 10
-#    DONE: 12
-#    FAILED: 13
-#    CANCELED: 14
+	p.yaxis.minor_tick_line_color = None  # turn off y-axis minor ticks
 	
-	states = ["", "a", "b", "c", "long name here ~~~~~~~", "dsfadsadfaaadsf", ""]
-	label_dict = {}
-	for i, s in enumerate(states):
-		label_dict[i] = s
 
-	#for i in label_dict:
-	#	print (i, label_dict[i])
+
+	states = ["", "SCHEDULING", "SCHEDULED", "SUBMITTING", "SUBMITTED", "EXECUTED", "DEQUEUEING", "DEQUEUED", "DONE", "FAILED", "CANCELED", ""]
+	label_dict = {}
+	for i, s in enumerate(states): # convert to dictionary, put this in __init__
+		label_dict[i] = s
 	
 	p.xaxis.formatter = FuncTickFormatter(code="""
 	    var labels = %s;
 	    return labels[tick];
-	""" % label_dict) # convert x-axis-labels into categorical labels: 1 -> "DONE", etc
+	""" % label_dict) # convert x-axis-labels into categorical labels: 1 -> "INITIAL", etc
 
 	return p
 

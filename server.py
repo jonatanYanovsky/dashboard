@@ -11,7 +11,7 @@ import os
 glob = reader.GlobalData()
 app = Flask(__name__)
 CORS(app)
-#webbrowser.open_new_tab("index.html")
+webbrowser.open_new_tab("index.html")
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -21,9 +21,9 @@ def getPlotlyURL():
 	    	req = request.form['plot']
 		
 		if req == "testReader": # client-side is asking for plot url
-			plot = reader.doGraphing(glob)
-			div, script = components(plot)
-			return render_template("frame.html", the_div=div, the_script=script)
+			#plot = reader.doGraphing(glob)
+			#div, script = components(plot)
+			#return render_template("frame.html", the_div=div, the_script=script)
 		
 			if glob.stop == True:
 				#shutdown_server()
