@@ -14,19 +14,17 @@ import pandas as pd
 import numpy as np
 
 
-class GlobalData(object): # for use in MyHandler and scanForChanges
+class GlobalData(object): # a data storage container that is passed to almost every function in reader.py
 
-	def zero(self):
+	def zero(self): # TODO: convert this to init method
 		self.myHandlerDirectory = "" 
 		self.detectedChange = False
 		self.timeData = []
 		self.pipelineData = []
 		self.stateDict = []
 		self.states = []
-		#newData = []
 		self.lineNum = []
 		self.reachedEnd = False
-		self.url = ""
 		self.hasBeenModified = False
 		self.newPlot = True
 		self.startTime = 0
@@ -42,10 +40,8 @@ class GlobalData(object): # for use in MyHandler and scanForChanges
 	pipelineData = []
 	stateDict = []
 	states = []
-	#newData = []
 	lineNum = []
 	reachedEnd = False
-	url = ""
 	hasBeenModified = False
 	newPlot = True
 	startTime = 0
@@ -65,9 +61,12 @@ class GlobalData(object): # for use in MyHandler and scanForChanges
 		'CANCELED': 9
 	}
 	taskStates = []
-	taskStatesTotal = [0, 0, 0, 0, 0, 0, 0, 0, 0]
-	lastIndex = 0
-	newIndex = 0
+	taskStatesTotal = [0, 0, 0, 0, 0, 0, 0, 0, 0] # used for plotting task states
+	lastIndex = 0 # used in processing taskStates
+	newIndex = 0 # used in processing taskStates
+
+	taskStateHistory = []
+	taskLastState = {} # dictionary holding last known state of each task
 	
 
 
@@ -122,6 +121,9 @@ def scanForChanges(glob):
 
 def testReader(glob): # prototype for changes-scanning file parsing
 
+	if glob.reachedEnd == True:
+		return -1
+
 	glob.startTime = time.time()
 
 	if glob.myHandlerDirectory != "":
@@ -140,14 +142,12 @@ def testReader(glob): # prototype for changes-scanning file parsing
 	numElements = 1 
 
 	while 1: # read every line in the file
-		#print lineCount, myFile
 		row = linecache.getline(myFile, lineCount)
 		lineCount += 1
-		#print "readline: " + row
 
-		if row == "":
+		if row == "": # we did NOT encounter the "END", so we must keep scanning until we reach the end
 			print "Keep scanning"
-			# we did NOT encounter the "END", so we must keep scanning until we reach the end
+			
 			scanForChanges(glob)
 
 			t = time.time() - glob.startTime
@@ -168,8 +168,8 @@ def testReader(glob): # prototype for changes-scanning file parsing
 
 		array = row.split(',')  # split row into elements	
 
-		try: # used for breaking the while loop
-			epoch = array[0]
+		try:
+			#epoch = array[0]
 			eventName = array[1]
 		except:
 			eventName = -1
@@ -196,59 +196,81 @@ def testReader(glob): # prototype for changes-scanning file parsing
 			continue
 		
 		if name == "task":
-			#if nameID == "0000":
-			
 			if eventName.find("publishing sync ack for obj with state") != -1:
-				event = eventName.split()
-				event = event[-1]
-			if eventName.find("received obj with state") != -1:
-				event = eventName.split()
-				# trim the start of this string:
-				#event = eventName.split()
-				event = event[4]
-				#print event[-1] # get last element - state description
+				event = eventName.split() # trim the start of this string
+				event = event[-1] # get last element - state description
+				#if eventName.find("received obj with state") != -1:
+				#	event = eventName.split()
+				#	event = event[4]
 				
-				#glob.timeData.append(numElements)
-			glob.hasBeenModified = True
-			eventNum = glob.task_state_values[event]
-			stateList = [nameID, eventNum]
-			glob.taskStates.append(stateList)
-			glob.newIndex += 1
+				glob.hasBeenModified = True
+				eventNum = glob.task_state_values[event]
+				nameID = int(nameID)
+				print [nameID, eventNum] 
+				stateList = [nameID, eventNum] # TODO: can remove nameID to save mem
+				glob.taskStates.append(stateList)
+				glob.taskStateHistory.append([nameID, -1, eventNum])
+				glob.newIndex += 1
 	
-def doGraphing(glob):
-	#print "Plots disabled |\--/||\--/||\--/||\--/|"
-	#return
+				
+				
+				#try: 
+					#val = glob.taskStateHistory[nameID] # it exists in the array already
+				#except:
+					# add it in
 	
-	
-	
-
+def doGraphing(glob):	
 	p = createPlot(glob)
 	glob.hasBeenModified = False
 	return p
 
 
-def createPlot(glob):
-
+def processing1(glob):
 	# go through new collected data and add it to the taskStatesTotal (= y axis data) array
 	# assume there is new data
 	item = []
-	while glob.lastIndex < glob.newIndex:
-		item = glob.taskStates[glob.lastIndex]
-		print item
+	while glob.lastIndex < glob.newIndex: # plot-specific algorithm for the SUM of the total number of tasks that have passed through a state
+		item = glob.taskStates[glob.lastIndex] 
 		glob.lastIndex += 1
-		glob.taskStatesTotal[item[1]] += 1
+		glob.taskStatesTotal[item[1]] += 1 # increment the state that the task is in
+
+
+def processing2(glob):
+	while glob.lastIndex < glob.newIndex:
+		item = glob.taskStateHistory[glob.lastIndex]
+		nameID = item[0]
+		newState = item[2]
+
+		try:
+			oldState = glob.taskLastState[nameID] # access existing element
+			glob.taskLastState[nameID] = newState # update state
+			# decrement last state, increment new state
+			glob.taskStatesTotal[oldState] -= 1
+			glob.taskStatesTotal[newState] += 1
+		except:
+			glob.taskLastState[nameID] = newState # create new element in dictionary
+			glob.taskStatesTotal[0] += 1 # increment state 0
+		
+		glob.lastIndex += 1
+		
+		
+
+		
+
+
+def createPlot(glob):
+
+	processing2(glob)
+
+	
 
 	xx = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-	yy = glob.taskStatesTotal
-	#yy = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] # height
-	
-	
+	yy = glob.taskStatesTotal	
 
 	p = figure(plot_height=400, plot_width=800, title="testReader", toolbar_location=None, tools="")
-	#p.vbar(x=xx, y=yy, left=0.5, right=0.5)
 	p.vbar(x=xx, width=0.95, bottom=0, top=yy, color="#CAB2D6")
 	p.xaxis.visible = False # This axis is broken, so hide it.
-	p.yaxis.visible = False # get rid of minor ticks
+	p.yaxis.visible = False # ^^ get rid of minor ticks
 
 	ticker = SingleIntervalTicker(interval=1, num_minor_ticks=0)
 	xaxis = LinearAxis(ticker=ticker)
@@ -259,13 +281,10 @@ def createPlot(glob):
 	p.y_range.start = 0
 	p.xgrid.grid_line_color = None
 	p.xaxis.major_label_orientation = 1
-	#p.min_border_left = 100 # padding to display labels cleanly
 
 	p.xaxis.minor_tick_line_color = None  # turn off x-axis minor ticks
 	p.yaxis.minor_tick_line_color = None  # turn off y-axis minor ticks
 	
-
-
 	states = ["", "SCHEDULING", "SCHEDULED", "SUBMITTING", "SUBMITTED", "EXECUTED", "DEQUEUEING", "DEQUEUED", "DONE", "FAILED", "CANCELED", ""]
 	label_dict = {}
 	for i, s in enumerate(states): # convert to dictionary, put this in __init__
