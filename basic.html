@@ -4,42 +4,9 @@
 <head>
 	<title>RADICAL dashboard</title>
 	<meta charset="UTF-8">
-	
-	<!-- <link href="http://cdn.pydata.org/bokeh/release/bokeh-0.12.5.min.css" rel="stylesheet">
-	<link href="http://cdn.pydata.org/bokeh/release/bokeh-widgets-0.12.0.min.css" rel="stylesheet">
-
-
-	 import Plotly.js
-	<script src="https://cdn.plot.ly/plotly-latest.min.js"></script> -->
 </head>
 
 <body onload="start()">
-	
-	<style>
-/*
-	h1 {
-		height: 200px;
-		width: 400px;
-
-		position: fixed;
-		top: 50%;
-		left: 50%;
-		margin-top: -100px;
-		margin-left: -200px;
-	}
-
-	p {
-		height: 200px;
-		width: 400px;
-
-		position: fixed;
-		top: 50%;
-		left: 50%;
-		margin-top: -100px;
-		margin-left: -200px;
-	}
-	*/
-	</style>
 
 	<script>
 
@@ -52,9 +19,19 @@
 		setInterval(server, 3000);
 	}
 
-	function getPlotType() { 
+	function getPlot() { 
 		var type = localStorage.getItem("plot");
 		return type;
+	}
+
+	function getPST() {
+		var pst = localStorage.getItem("pst");
+		return pst;
+	}
+
+	function getPlotType() {
+		var plotType = localStorage.getItem("plotType");
+		return plotType;
 	}
 
 	function setPlotURL(url) {
@@ -85,11 +62,13 @@
 				setPlotURL(ret);
 		}
 
-		var plot = getPlotType();
+		var plot = getPlot();
+		var pst = getPST();
+		var plotType = getPlotType();
 
 		req.open("POST", "http://localhost:5000/", true);
 		req.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
- 		req.send("plot=" + plot);
+ 		req.send("plot=" + plot + "&pst=" + pst + "&plotType=" + plotType);
 	}
 
 	</script>

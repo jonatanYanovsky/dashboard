@@ -19,10 +19,6 @@ class GlobalData(object): # a data storage container that is passed to almost ev
 	def zero(self): # TODO: convert this to init method
 		self.myHandlerDirectory = "" 
 		self.detectedChange = False
-		self.timeData = []
-		self.pipelineData = []
-		self.stateDict = []
-		self.states = []
 		self.lineNum = []
 		self.reachedEnd = False
 		self.hasBeenModified = False
@@ -31,15 +27,8 @@ class GlobalData(object): # a data storage container that is passed to almost ev
 		self.limit = 3
 		self.stop = False
 
-
-
-
 	myHandlerDirectory = "" 
 	detectedChange = False
-	timeData = []
-	pipelineData = []
-	stateDict = []
-	states = []
 	lineNum = []
 	reachedEnd = False
 	hasBeenModified = False
@@ -47,8 +36,18 @@ class GlobalData(object): # a data storage container that is passed to almost ev
 	startTime = 0
 	limit = 3 # seconds
 	stop = False # abort
+
+	plotType = "" # plot type: total or current
+	pst = "" # parsing for pipeline stage or task?
 	
-	task_state_values = {
+	states = [] # data container for [taskID, state]
+	lastIndex = 0 # used in processing taskStates
+	newIndex = 0 # used in processing taskStates
+
+	stateHistory = []
+	lastState = {} # dictionary holding last known state of each task
+
+	task_state_values = { # dictionary to convert from string to int to save mem
 		'SCHEDULING': 0,
 		'SCHEDULED': 1,
 		'SUBMITTING': 2,
@@ -60,14 +59,24 @@ class GlobalData(object): # a data storage container that is passed to almost ev
 		'FAILED': 8,
 		'CANCELED': 9
 	}
-	taskStates = []
-	taskStatesTotal = [0, 0, 0, 0, 0, 0, 0, 0, 0] # used for plotting task states
-	lastIndex = 0 # used in processing taskStates
-	newIndex = 0 # used in processing taskStates
-
-	taskStateHistory = []
-	taskLastState = {} # dictionary holding last known state of each task
+	taskStatesTotal = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] # used for plotting task states
 	
+	stage_state_values = {
+		'SCHEDULING': 0,
+		'SCHEDULED': 1,
+		'DONE': 2,
+		'FAILED': 3,
+		'CANCELED': 4
+	}
+	stageStatesTotal = [0, 0, 0, 0, 0]
+
+	pipeline_state_values = {
+		'SCHEDULING': 0,
+		'DONE': 1,
+		'FAILED': 2,
+		'CANCELED': 3
+	}
+	pipelineStatesTotal = [0, 0, 0, 0]
 
 
 class MyHandler(FileSystemEventHandler): # used to detect changes, works in tandem with scanForChanges
@@ -195,7 +204,7 @@ def testReader(glob): # prototype for changes-scanning file parsing
 		except:
 			continue
 		
-		if name == "task":
+		if name == glob.pst:
 			if eventName.find("publishing sync ack for obj with state") != -1:
 				event = eventName.split() # trim the start of this string
 				event = event[-1] # get last element - state description
@@ -204,20 +213,20 @@ def testReader(glob): # prototype for changes-scanning file parsing
 				#	event = event[4]
 				
 				glob.hasBeenModified = True
-				eventNum = glob.task_state_values[event]
+				if glob.pst == "pipeline":
+					eventNum = glob.pipeline_state_values[event]
+				elif glob.pst == "stage":
+					eventNum = glob.stage_state_values[event]
+				else:
+					eventNum = glob.task_state_values[event]
+				
 				nameID = int(nameID)
 				print [nameID, eventNum] 
 				stateList = [nameID, eventNum] # TODO: can remove nameID to save mem
-				glob.taskStates.append(stateList)
-				glob.taskStateHistory.append([nameID, -1, eventNum])
+				glob.states.append(stateList)
+				glob.stateHistory.append([nameID, -1, eventNum])
 				glob.newIndex += 1
 	
-				
-				
-				#try: 
-					#val = glob.taskStateHistory[nameID] # it exists in the array already
-				#except:
-					# add it in
 	
 def doGraphing(glob):	
 	p = createPlot(glob)
@@ -225,47 +234,71 @@ def doGraphing(glob):
 	return p
 
 
-def processing1(glob):
+def plotTotal(glob):
 	# go through new collected data and add it to the taskStatesTotal (= y axis data) array
 	# assume there is new data
 	item = []
 	while glob.lastIndex < glob.newIndex: # plot-specific algorithm for the SUM of the total number of tasks that have passed through a state
-		item = glob.taskStates[glob.lastIndex] 
+		item = glob.states[glob.lastIndex] 
 		glob.lastIndex += 1
-		glob.taskStatesTotal[item[1]] += 1 # increment the state that the task is in
 
+		if glob.pst == "pipeline": # increment the state that the task is in
+			glob.pipelineStatesTotal[item[1]] += 1 
+		elif glob.pst == "stage":
+			glob.stageStatesTotal[item[1]] += 1 
+		else:
+			glob.taskStatesTotal[item[1]] += 1 
+		
 
-def processing2(glob):
+def plotCurrent(glob):
 	while glob.lastIndex < glob.newIndex:
-		item = glob.taskStateHistory[glob.lastIndex]
+		item = glob.stateHistory[glob.lastIndex]
 		nameID = item[0]
 		newState = item[2]
 
 		try:
-			oldState = glob.taskLastState[nameID] # access existing element
-			glob.taskLastState[nameID] = newState # update state
-			# decrement last state, increment new state
-			glob.taskStatesTotal[oldState] -= 1
-			glob.taskStatesTotal[newState] += 1
-		except:
-			glob.taskLastState[nameID] = newState # create new element in dictionary
-			glob.taskStatesTotal[0] += 1 # increment state 0
-		
-		glob.lastIndex += 1
-		
-		
+			oldState = glob.lastState[nameID] # access existing element
+			glob.lastState[nameID] = newState # update state
 
-		
+			# decrement last state, increment new state
+			if glob.pst == "pipeline":
+				glob.pipelineStatesTotal[oldState] -= 1
+				glob.pipelineStatesTotal[newState] += 1
+			elif glob.pst == "stage":
+				glob.stageStatesTotal[oldState] -= 1
+				glob.stageStatesTotal[newState] += 1
+			else:
+				glob.taskStatesTotal[oldState] -= 1
+				glob.taskStatesTotal[newState] += 1
+		except:
+			glob.lastState[nameID] = newState # create new element in dictionary
+
+			if glob.pst == "pipeline":
+				glob.pipelineStatesTotal[0] += 1 # increment state 0
+			elif glob.pst == "stage":
+				glob.pipelineStatesTotal[0] += 1
+			else:
+				glob.taskStatesTotal[0] += 1
+			
+		glob.lastIndex += 1
 
 
 def createPlot(glob):
 
-	processing2(glob)
+	if glob.plotType == "total":
+		plotTotal(glob)
+	else:
+		plotCurrent(glob)
 
-	
-
-	xx = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-	yy = glob.taskStatesTotal	
+	if glob.pst == "pipeline":
+		xx = [1, 2, 3, 4]
+		yy = glob.pipelineStatesTotal
+	elif glob.pst == "stage":
+		xx = [1, 2, 3, 4, 5]
+		yy = glob.stageStatesTotal
+	else:
+		xx = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+		yy = glob.taskStatesTotal
 
 	p = figure(plot_height=400, plot_width=800, title="testReader", toolbar_location=None, tools="")
 	p.vbar(x=xx, width=0.95, bottom=0, top=yy, color="#CAB2D6")
@@ -285,9 +318,16 @@ def createPlot(glob):
 	p.xaxis.minor_tick_line_color = None  # turn off x-axis minor ticks
 	p.yaxis.minor_tick_line_color = None  # turn off y-axis minor ticks
 	
-	states = ["", "SCHEDULING", "SCHEDULED", "SUBMITTING", "SUBMITTED", "EXECUTED", "DEQUEUEING", "DEQUEUED", "DONE", "FAILED", "CANCELED", ""]
+
+	if glob.pst == "pipeline":
+		theStates = ["", "SCHEDULING", "DONE", "FAILED", "CANCELED", ""]
+	elif glob.pst == "stage":
+		theStates = ["", "SCHEDULING", "SCHEDULED", "DONE", "FAILED", "CANCELED", ""]
+	else:
+		theStates = ["", "SCHEDULING", "SCHEDULED", "SUBMITTING", "SUBMITTED", "EXECUTED", "DEQUEUEING", "DEQUEUED", "DONE", "FAILED", "CANCELED", ""]
+
 	label_dict = {}
-	for i, s in enumerate(states): # convert to dictionary, put this in __init__
+	for i, s in enumerate(theStates): # convert to dictionary, put this in __init__
 		label_dict[i] = s
 	
 	p.xaxis.formatter = FuncTickFormatter(code="""

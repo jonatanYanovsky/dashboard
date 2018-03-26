@@ -9,6 +9,8 @@ import os
 
 
 glob = reader.GlobalData()
+#glob.pst = "pipeline"
+#glob.plotType = "total"
 app = Flask(__name__)
 CORS(app)
 #webbrowser.open_new_tab("index.html")
@@ -19,6 +21,13 @@ def getPlotlyURL():
 	if request.method == 'POST':		
 		
 	    	req = request.form['plot']
+		pst = request.form['pst']
+		plotType = request.form['plotType']
+		
+		if glob.pst == "":
+			glob.pst = pst
+		if glob.plotType == "":
+			glob.plotType = plotType
 		
 		if req == "testReader": # client-side is asking for plot url
 			#plot = reader.doGraphing(glob) # for testing

@@ -1,11 +1,46 @@
 <!DOCTYPE html>
 <html>
+<head>
+	<title>RADICAL dashboard</title>
+	<meta charset="UTF-8">
+</head>
 <body>
 
 	<script>
-		function setPlotAndRedirect(plot) {
+		function setPlotAndRedirect() {
+			
+			var pst = "";
+			var plotType = "";
+
+			var radioButtons = document.getElementsByName("pst");
+			var length = radioButtons.length;
+			for (var i = 0; i < length; i++) {
+				if (radioButtons[i].checked) {
+					pst = radioButtons[i].value;
+					break;
+				}
+			}
+			
+			radioButtons = document.getElementsByName("plotType");
+			length = radioButtons.length;
+			for (var i = 0; i < length; i++) {
+				if (radioButtons[i].checked) {
+					plotType = radioButtons[i].value;
+					break;
+				}
+			}
+			 
+
+			if (pst === "" || plotType === "") {
+				document.getElementById("error").innerHTML = "Select both buttons please.";
+				return;
+			}
+
+			localStorage.setItem("plot", "testReader");
+			localStorage.setItem("pst", pst);
+			localStorage.setItem("plotType", plotType);
+
 			var url = "basic.html";
-			localStorage.setItem("plot",plot);
 			window.location.href = url;
 		}
 
@@ -13,13 +48,29 @@
 
 <h1>DASHBOARD</h1>
 
+<p>Select which entity to parse for:</p><br>
+<form action="">
+  <input type="radio" name="pst" value="pipeline">pipeline<br>
+  <input type="radio" name="pst" value="stage">stage<br>
+  <input type="radio" name="pst" value="task">task
+</form>
+
+<p>Select how the entities selected above should be plotted per execution stage:</p><br>
+<form action="">
+  <input type="radio" name="plotType" value="total">total<br>
+  <input type="radio" name="plotType" value="current">current
+</form>
+
+<button onclick="setPlotAndRedirect()">Show Plot</button><br>
+<p id="error"></p>
+
 <!--<a href="" onClick="setPlotAndRedirect('pst');">pst</p>
 <br>
 <a href="" onClick="setPlotAndRedirect('timeseries');">timeseries</p>
 <br>
 <a href="" onClick="setPlotAndRedirect('taskseries');">taskseries</p>
-<br>-->
-<a href="" onClick="setPlotAndRedirect('testReader');">testReader</p>
+<br>
+<a href="" onClick="setPlotAndRedirect('testReader');">testReader</p>-->
 
 </body>
 </html>
