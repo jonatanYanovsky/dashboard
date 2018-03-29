@@ -16,67 +16,288 @@ import numpy as np
 
 class GlobalData(object): # a data storage container that is passed to almost every function in reader.py
 
-	def zero(self): # TODO: convert this to init method
-		self.myHandlerDirectory = "" 
-		self.detectedChange = False
-		self.lineNum = []
-		self.reachedEnd = False
-		self.hasBeenModified = False
-		self.newPlot = True
-		self.startTime = 0
-		self.limit = 3
-		self.stop = False
+	def __init__(self):
 
-	myHandlerDirectory = "" 
-	detectedChange = False
-	lineNum = []
-	reachedEnd = False
-	hasBeenModified = False
-	newPlot = True
-	startTime = 0
-	limit = 3 # seconds
-	stop = False # abort
+		self._myHandlerDirectory = "" 
+		self._detectedChange = False
+		self._lineNum = 0
+		self._reachedEnd = False
+		self._hasBeenModified = False
+		self._newPlot = True
+		self._startTime = 0
+		self._limit = 3 # seconds
+		self._stop = False # abort
 
-	plotType = "" # plot type: total or current
-	pst = "" # parsing for pipeline stage or task?
+		self._plotType = "" # plot type: total or current
+		self._pst = "" # parsing for pipeline stage or task?
 	
-	states = [] # data container for [taskID, state]
-	lastIndex = 0 # used in processing taskStates
-	newIndex = 0 # used in processing taskStates
+		self._states = [] # data container for [taskID, state]
+		self._lastIndex = 0 # used in processing taskStates
+		self._newIndex = 0 # used in processing taskStates
 
-	stateHistory = []
-	lastState = {} # dictionary holding last known state of each task
+		self._stateHistory = []
+		self._lastState = {} # dictionary holding last known state of each task
 
-	task_state_values = { # dictionary to convert from string to int to save mem
-		'SCHEDULING': 0,
-		'SCHEDULED': 1,
-		'SUBMITTING': 2,
-		'SUBMITTED': 3,
-		'EXECUTED': 4,
-		'DEQUEUEING': 5,
-		'DEQUEUED': 6,
-		'DONE': 7,
-		'FAILED': 8,
-		'CANCELED': 9
-	}
-	taskStatesTotal = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] # used for plotting task states
+		self._task_state_values = { # dictionary to convert from string to int to save mem
+			'SCHEDULING': 0,
+			'SCHEDULED': 1,
+			'SUBMITTING': 2,
+			'SUBMITTED': 3,
+			'EXECUTED': 4,
+			'DEQUEUEING': 5,
+			'DEQUEUED': 6,
+			'DONE': 7,
+			'FAILED': 8,
+			'CANCELED': 9
+		}
+		self._taskStatesTotal = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] # used for plotting task states
 	
-	stage_state_values = {
-		'SCHEDULING': 0,
-		'SCHEDULED': 1,
-		'DONE': 2,
-		'FAILED': 3,
-		'CANCELED': 4
-	}
-	stageStatesTotal = [0, 0, 0, 0, 0]
+		self._stage_state_values = {
+			'SCHEDULING': 0,
+			'SCHEDULED': 1,
+			'DONE': 2,
+			'FAILED': 3,
+			'CANCELED': 4
+		}
+		self._stageStatesTotal = [0, 0, 0, 0, 0]
 
-	pipeline_state_values = {
-		'SCHEDULING': 0,
-		'DONE': 1,
-		'FAILED': 2,
-		'CANCELED': 3
-	}
-	pipelineStatesTotal = [0, 0, 0, 0]
+		self._pipeline_state_values = {
+			'SCHEDULING': 0,
+			'DONE': 1,
+			'FAILED': 2,
+			'CANCELED': 3
+		}
+		self._pipelineStatesTotal = [0, 0, 0, 0]
+
+	# setters and getters below
+
+	@property
+	def myHandlerDirectory(self):
+		"""'myHandlerDirectory' property."""
+		return self._myHandlerDirectory
+	@myHandlerDirectory.setter
+	def myHandlerDirectory(self, value):
+		self._myHandlerDirectory = value
+
+	@property
+	def detectedChange(self):
+		"""'detectedChange' property."""
+		return self._detectedChange
+	@detectedChange.setter
+	def detectedChange(self, value):
+		self._detectedChange = value
+
+	@property
+	def lineNum(self):
+		"""'lineNum' property."""
+		return self._lineNum
+	@lineNum.setter
+	def lineNum(self, value):
+		self._lineNum = value
+
+	@property
+	def reachedEnd(self):
+		"""'reachedEnd' property."""
+		return self._reachedEnd
+	@reachedEnd.setter
+	def reachedEnd(self, value):
+		self._reachedEnd = value
+
+	@property
+	def hasBeenModified(self):
+		"""'hasBeenModified' property."""
+		return self._hasBeenModified
+	@hasBeenModified.setter
+	def hasBeenModified(self, value):
+		self._hasBeenModified = value
+
+
+	@property
+	def newPlot(self):
+		"""'newPlot' property."""
+		return self._newPlot
+	@newPlot.setter
+	def newPlot(self, value):
+		self._newPlot = value
+
+	@property
+	def startTime(self):
+		"""'startTime' property."""
+		return self._startTime
+	@startTime.setter
+	def startTime(self, value):
+		self._startTime = value
+
+	@property
+	def limit(self):
+		"""'limit' property."""
+		return self._limit
+	@limit.setter
+	def limit(self, value):
+		self._limit = value
+
+	@property
+	def stop(self):
+		"""'stop' property."""
+		return self._stop
+	@stop.setter
+	def stop(self, value):
+		self._stop = value
+
+	@property
+	def plotType(self):
+		"""'plotType' property."""
+		return self._plotType
+	@plotType.setter
+	def plotType(self, value):
+		self._plotType = value
+
+	@property
+	def pst(self):
+		"""'pst' property."""
+		return self._pst
+	@pst.setter
+	def pst(self, value):
+		self._pst = value
+
+	@property
+	def states(self):
+		"""'states' property."""
+		return self._states
+	@states.setter
+	def states(self, value):
+		self._states = value
+	def __getitem__(self, idx):
+		return self._states[idx]
+	def __setitem__(self, idx, value):
+		self._states[idx] = value
+	def append(self, val):
+		self._states = self._states + [val]
+		return self._states  
+	def extend(self, val):
+		return self._states.extend(val)
+
+	@property
+	def lastIndex(self):
+		"""'lastIndex' property."""
+		return self._lastIndex
+	@lastIndex.setter
+	def lastIndex(self, value):
+		self._lastIndex = value
+
+	@property
+	def newIndex(self):
+		"""'newIndex' property."""
+		return self._newIndex
+	@newIndex.setter
+	def newIndex(self, value):
+		self._newIndex = value
+
+	@property
+	def stateHistory(self):
+		"""'stateHistory' property."""
+		return self._stateHistory
+	@stateHistory.setter
+	def stateHistory(self, value):
+		self._stateHistory = value
+	def __getitem__(self, idx):
+		return self._stateHistory[idx]
+	def __setitem__(self, idx, value):
+		self._stateHistory[idx] = value
+	def append(self, val):
+		self._stateHistory = self._stateHistory + [val]
+		return self._stateHistory  
+	def extend(self, val):
+		return self._stateHistory.extend(val)
+
+	@property
+	def lastState(self):
+		"""'lastState' property."""
+		return self._lastState
+	@lastState.setter
+	def lastState(self, value):
+		self._lastState = value
+	def __getitem__(self, idx):
+		return self._lastState[idx]
+	def __setitem__(self, idx, value):
+		self._lastState[idx] = value
+	def append(self, val):
+		self._lastState = self._lastState + [val]
+		return self._lastState  
+	def extend(self, val):
+		return self._lastState.extend(val)
+
+	@property
+	def task_state_values(self):
+		"""'task_state_values' property."""
+		return self._task_state_values
+	@task_state_values.setter
+	def task_state_values(self, value):
+		self._task_state_values = value
+	def __getitem__(self, idx):
+		return self._task_state_values[idx]
+	def __setitem__(self, idx, value):
+		self._task_state_values[idx] = value
+
+	@property
+	def taskStatesTotal(self):
+		"""'taskStatesTotal' property."""
+		return self._taskStatesTotal
+	@taskStatesTotal.setter
+	def taskStatesTotal(self, value):
+		self._taskStatesTotal = value
+	def __getitem__(self, idx):
+		return self._taskStatesTotal[idx]
+	def __setitem__(self, idx, value):
+		self._taskStatesTotal[idx] = value
+
+	@property
+	def stage_state_values(self):
+		"""'stage_state_values' property."""
+		return self._stage_state_values
+	@stage_state_values.setter
+	def stage_state_values(self, value):
+		self._stage_state_values = value
+	def __getitem__(self, idx):
+		return self._stage_state_values[idx]
+	def __setitem__(self, idx, value):
+		self._stage_state_values[idx] = value
+
+	@property
+	def stageStatesTotal(self):
+		"""'stageStatesTotal' property."""
+		return self._stageStatesTotal
+	@stageStatesTotal.setter
+	def stageStatesTotal(self, value):
+		self._stageStatesTotal = value
+	def __getitem__(self, idx):
+		return self._stageStatesTotal[idx]
+	def __setitem__(self, idx, value):
+		self._stageStatesTotal[idx] = value
+
+	@property
+	def pipeline_state_values(self):
+		"""'pipeline_state_values' property."""
+		return self._pipeline_state_values
+	@pipeline_state_values.setter
+	def pipeline_state_values(self, value):
+		self._pipeline_state_values = value
+	def __getitem__(self, idx):
+		return self._pipeline_state_values[idx]
+	def __setitem__(self, idx, value):
+		self._pipeline_state_values[idx] = value
+
+	@property
+	def pipelineStatesTotal(self):
+		"""'pipelineStatesTotal' property."""
+		return self._pipelineStatesTotal
+	@pipelineStatesTotal.setter
+	def pipelineStatesTotal(self, value):
+		self._pipelineStatesTotal = value
+	def __getitem__(self, idx):
+		return self._pipelineStatesTotal[idx]
+	def __setitem__(self, idx, value):
+		self._pipelineStatesTotal[idx] = value
 
 
 class MyHandler(FileSystemEventHandler): # used to detect changes, works in tandem with scanForChanges
@@ -140,6 +361,8 @@ def testReader(glob): # prototype for changes-scanning file parsing
 		lineCount = glob.lineNum # start at last line number
 	else:
 		myDir = getConf(glob) # start fresh
+		if myDir == -1:
+			return -2
 		lineCount = 1
 
 	if myDir == -1:
@@ -221,7 +444,7 @@ def testReader(glob): # prototype for changes-scanning file parsing
 					eventNum = glob.task_state_values[event]
 				
 				nameID = int(nameID)
-				print [nameID, eventNum] 
+				#print [nameID, eventNum] 
 				stateList = [nameID, eventNum] # TODO: can remove nameID to save mem
 				glob.states.append(stateList)
 				glob.stateHistory.append([nameID, -1, eventNum])
@@ -293,17 +516,22 @@ def createPlot(glob):
 	if glob.pst == "pipeline":
 		xx = [1, 2, 3, 4]
 		yy = glob.pipelineStatesTotal
+		myColor = "orange"
 	elif glob.pst == "stage":
 		xx = [1, 2, 3, 4, 5]
 		yy = glob.stageStatesTotal
+		myColor = "green"
 	else:
 		xx = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 		yy = glob.taskStatesTotal
+		myColor = "blue"
 
-	p = figure(plot_height=400, plot_width=800, title="testReader", toolbar_location=None, tools="")
-	p.vbar(x=xx, width=0.95, bottom=0, top=yy, color="#CAB2D6")
+	p = figure(plot_height=400, plot_width=800, title=glob.plotType, toolbar_location=None, tools="")
+	p.vbar(x=xx, width=0.95, bottom=0, top=yy, color=myColor)
 	p.xaxis.visible = False # This axis is broken, so hide it.
 	p.yaxis.visible = False # ^^ get rid of minor ticks
+
+	
 
 	ticker = SingleIntervalTicker(interval=1, num_minor_ticks=0)
 	xaxis = LinearAxis(ticker=ticker)
@@ -311,13 +539,15 @@ def createPlot(glob):
 	yaxis = LinearAxis(ticker=ticker)
 	p.add_layout(yaxis, 'left') # add a new y-axis which works properly (no 1.5, 2.5, etc ticks)
 
+	p.yaxis.axis_label = glob.pst
+	p.yaxis.axis_label_text_font_style = "normal"
+
 	p.y_range.start = 0
 	p.xgrid.grid_line_color = None
 	p.xaxis.major_label_orientation = 1
 
 	p.xaxis.minor_tick_line_color = None  # turn off x-axis minor ticks
 	p.yaxis.minor_tick_line_color = None  # turn off y-axis minor ticks
-	
 
 	if glob.pst == "pipeline":
 		theStates = ["", "SCHEDULING", "DONE", "FAILED", "CANCELED", ""]
@@ -348,7 +578,11 @@ def getConf(glob):	# get data stored in configuration file, and find the directo
 		directories = []
 		rs = row.rstrip()
 
-		for x in os.listdir(row.rstrip()): # only the names of the files/directories
+		filesInDir = os.listdir(row.rstrip())
+		if len(filesInDir) == 0:
+			return -1
+
+		for x in filesInDir: # only the names of the files/directories
 
 			z = rs + x # the absolute path to the directory
 			if os.path.isdir(z): #print x
@@ -385,18 +619,11 @@ def getConf(glob):	# get data stored in configuration file, and find the directo
 
 		try:
 			theDirectory = directories2[highestIndex]
-		except: #  IndexError
+		except: 
 			return -1
 
 		ret = rs + theDirectory.rstrip() + "/"
-		#print "[" + ret + "][" + glob.myHandlerDirectory + "]"
-		#if ret != glob.myHandlerDirectory:
-		#	glob.zero() # make preparations for new execution
-			#print "zeroed"
-
-		#print "before", glob.myHandlerDirectory
 		glob.myHandlerDirectory = ret
-		#print "after", glob.myHandlerDirectory
 
 		return rs + theDirectory.rstrip() + "/" # the path to the directory
 

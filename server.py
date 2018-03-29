@@ -13,7 +13,7 @@ glob = reader.GlobalData()
 #glob.plotType = "total"
 app = Flask(__name__)
 CORS(app)
-#webbrowser.open_new_tab("index.html")
+webbrowser.open_new_tab("index.html")
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -39,7 +39,10 @@ def getPlotlyURL():
 
 			if glob.reachedEnd == False:
 				print "parse"
-				reader.testReader(glob) # do parsing only if not done
+				returnValue = reader.testReader(glob) # do parsing only if not done
+				if returnValue == -2:
+					print "No EnTK execution data found. Please start your EnTK execution or check your configuration file to point towards the correct directory"
+					return "sleep"
 
 			if glob.hasBeenModified == True: # new data appeared
 				print "performed graphing"
