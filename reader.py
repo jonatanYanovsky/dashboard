@@ -20,7 +20,7 @@ class GlobalData(object): # a data storage container that is passed to almost ev
 
 		self._myHandlerDirectory = "" 
 		self._detectedChange = False
-		self._lineNum = 0
+		self._lineNum = 0 # used for parsing
 		self._reachedEnd = False
 		self._hasBeenModified = False
 		self._newPlot = True
@@ -31,12 +31,25 @@ class GlobalData(object): # a data storage container that is passed to almost ev
 		self._plotType = "" # plot type: total or current
 		self._pst = "" # parsing for pipeline stage or task?
 	
-		self._states = [] # data container for [taskID, state]
-		self._lastIndex = 0 # used in processing taskStates
-		self._newIndex = 0 # used in processing taskStates
+		self._pipelineStates = [] # data container for [taskID, state]
+		self._stageStates = [] # data container for [taskID, state]
+		self._taskStates = [] # data container for [taskID, state]
 
-		self._stateHistory = []
-		self._lastState = {} # dictionary holding last known state of each task
+		self._pipelineLastIndex = 0 # used in processing taskStates
+		self._stageLastIndex = 0 # used in processing taskStates
+		self._taskLastIndex = 0 # used in processing taskStates
+
+		self._pipelineNewIndex = 0 # used in processing taskStates
+		self._stageNewIndex = 0 # used in processing taskStates
+		self._taskNewIndex = 0 # used in processing taskStates
+
+		self._pipelineStateHistory = []
+		self._stageStateHistory = []
+		self._taskStateHistory = []
+
+		self._pipelineLastState = {}
+		self._stageLastState = {}
+		self._taskLastState = {} # dictionary holding last known state of each task
 
 		self._task_state_values = { # dictionary to convert from string to int to save mem
 			'SCHEDULING': 0,
@@ -68,6 +81,10 @@ class GlobalData(object): # a data storage container that is passed to almost ev
 			'CANCELED': 3
 		}
 		self._pipelineStatesTotal = [0, 0, 0, 0]
+
+	def reset(self):
+		self.__init__()
+		print "reset self"
 
 	# setters and getters below
 
@@ -110,7 +127,6 @@ class GlobalData(object): # a data storage container that is passed to almost ev
 	@hasBeenModified.setter
 	def hasBeenModified(self, value):
 		self._hasBeenModified = value
-
 
 	@property
 	def newPlot(self):
@@ -161,71 +177,205 @@ class GlobalData(object): # a data storage container that is passed to almost ev
 		self._pst = value
 
 	@property
-	def states(self):
-		"""'states' property."""
-		return self._states
-	@states.setter
-	def states(self, value):
-		self._states = value
+	def pipelineStates(self):
+		"""'pipelineStates' property."""
+		return self._pipelineStates
+	@pipelineStates.setter
+	def pipelineStates(self, value):
+		self._pipelineStates = value
 	def __getitem__(self, idx):
-		return self._states[idx]
+		return self._pipelineStates[idx]
 	def __setitem__(self, idx, value):
-		self._states[idx] = value
+		self._pipelineStates[idx] = value
 	def append(self, val):
-		self._states = self._states + [val]
-		return self._states  
+		self._pipelineStates = self._pipelineStates + [val]
+		return self._pipelineStates  
 	def extend(self, val):
-		return self._states.extend(val)
+		return self._pipelineStates.extend(val)
 
 	@property
-	def lastIndex(self):
-		"""'lastIndex' property."""
-		return self._lastIndex
-	@lastIndex.setter
-	def lastIndex(self, value):
-		self._lastIndex = value
-
-	@property
-	def newIndex(self):
-		"""'newIndex' property."""
-		return self._newIndex
-	@newIndex.setter
-	def newIndex(self, value):
-		self._newIndex = value
-
-	@property
-	def stateHistory(self):
-		"""'stateHistory' property."""
-		return self._stateHistory
-	@stateHistory.setter
-	def stateHistory(self, value):
-		self._stateHistory = value
+	def stageStates(self):
+		"""'stageStates' property."""
+		return self._stageStates
+	@stageStates.setter
+	def stageStates(self, value):
+		self._stageStates = value
 	def __getitem__(self, idx):
-		return self._stateHistory[idx]
+		return self._stageStates[idx]
 	def __setitem__(self, idx, value):
-		self._stateHistory[idx] = value
+		self._stageStates[idx] = value
 	def append(self, val):
-		self._stateHistory = self._stateHistory + [val]
-		return self._stateHistory  
+		self._stageStates = self._stageStates + [val]
+		return self._stageStates  
 	def extend(self, val):
-		return self._stateHistory.extend(val)
+		return self._stageStates.extend(val)
 
 	@property
-	def lastState(self):
-		"""'lastState' property."""
-		return self._lastState
-	@lastState.setter
-	def lastState(self, value):
-		self._lastState = value
+	def taskStates(self):
+		"""'taskStates' property."""
+		return self._taskStates
+	@taskStates.setter
+	def taskStates(self, value):
+		self._taskStates = value
 	def __getitem__(self, idx):
-		return self._lastState[idx]
+		return self._taskStates[idx]
 	def __setitem__(self, idx, value):
-		self._lastState[idx] = value
+		self._taskStates[idx] = value
 	def append(self, val):
-		self._lastState = self._lastState + [val]
-		return self._lastState  
+		self._taskStates = self._taskStates + [val]
+		return self._taskStates  
 	def extend(self, val):
-		return self._lastState.extend(val)
+		return self._taskStates.extend(val)
+
+	@property
+	def pipelineLastIndex(self):
+		"""'pipelineLastIndex' property."""
+		return self._pipelineLastIndex
+	@pipelineLastIndex.setter
+	def pipelineLastIndex(self, value):
+		self._pipelineLastIndex = value
+
+	@property
+	def stageLastIndex(self):
+		"""'stageLastIndex' property."""
+		return self._stageLastIndex
+	@stageLastIndex.setter
+	def stageLastIndex(self, value):
+		self._stageLastIndex = value
+
+	@property
+	def taskLastIndex(self):
+		"""'taskLastIndex' property."""
+		return self._taskLastIndex
+	@taskLastIndex.setter
+	def taskLastIndex(self, value):
+		self._taskLastIndex = value
+
+	@property
+	def pipelineNewIndex(self):
+		"""'pipelineNewIndex' property."""
+		return self._pipelineNewIndex
+	@pipelineNewIndex.setter
+	def pipelineNewIndex(self, value):
+		self._pipelineNewIndex = value
+
+	@property
+	def stageNewIndex(self):
+		"""'stageNewIndex' property."""
+		return self._stageNewIndex
+	@stageNewIndex.setter
+	def stageNewIndex(self, value):
+		self._stageNewIndex = value
+
+	@property
+	def taskNewIndex(self):
+		"""'taskNewIndex' property."""
+		return self._taskNewIndex
+	@taskNewIndex.setter
+	def taskNewIndex(self, value):
+		self._taskNewIndex = value
+
+	@property
+	def pipelineStateHistory(self):
+		"""'pipelineStateHistory' property."""
+		return self._pipelineStateHistory
+	@pipelineStateHistory.setter
+	def pipelineStateHistory(self, value):
+		self._pipelineStateHistory = value
+	def __getitem__(self, idx):
+		return self._pipelineStateHistory[idx]
+	def __setitem__(self, idx, value):
+		self._pipelineStateHistory[idx] = value
+	def append(self, val):
+		self._pipelineStateHistory = self._pipelineStateHistory + [val]
+		return self._pipelineStateHistory  
+	def extend(self, val):
+		return self._pipelineStateHistory.extend(val)
+
+	@property
+	def stageStateHistory(self):
+		"""'stageStateHistory' property."""
+		return self._stageStateHistory
+	@stageStateHistory.setter
+	def stageStateHistory(self, value):
+		self._stageStateHistory = value
+	def __getitem__(self, idx):
+		return self._stageStateHistory[idx]
+	def __setitem__(self, idx, value):
+		self._stageStateHistory[idx] = value
+	def append(self, val):
+		self._stageStateHistory = self._stageStateHistory + [val]
+		return self._stageStateHistory  
+	def extend(self, val):
+		return self._stageStateHistory.extend(val)
+
+	@property
+	def taskStateHistory(self):
+		"""'taskStateHistory' property."""
+		return self._taskStateHistory
+	@taskStateHistory.setter
+	def taskStateHistory(self, value):
+		self._taskStateHistory = value
+	def __getitem__(self, idx):
+		return self._taskStateHistory[idx]
+	def __setitem__(self, idx, value):
+		self._taskStateHistory[idx] = value
+	def append(self, val):
+		self._taskStateHistory = self._taskStateHistory + [val]
+		return self._taskStateHistory  
+	def extend(self, val):
+		return self._taskStateHistory.extend(val)
+
+	@property
+	def pipelineLastState(self):
+		"""'pipelineLastState' property."""
+		return self._pipelineLastState
+	@pipelineLastState.setter
+	def pipelineLastState(self, value):
+		self._pipelineLastState = value
+	def __getitem__(self, idx):
+		return self._pipelineLastState[idx]
+	def __setitem__(self, idx, value):
+		self._pipelineLastState[idx] = value
+	def append(self, val):
+		self._pipelineLastState = self._pipelineLastState + [val]
+		return self._pipelineLastState  
+	def extend(self, val):
+		return self._pipelineLastState.extend(val)
+
+	@property
+	def stageLastState(self):
+		"""'stageLastState' property."""
+		return self._stageLastState
+	@stageLastState.setter
+	def stageLastState(self, value):
+		self._stageLastState = value
+	def __getitem__(self, idx):
+		return self._stageLastState[idx]
+	def __setitem__(self, idx, value):
+		self._stageLastState[idx] = value
+	def append(self, val):
+		self._stageLastState = self._stageLastState + [val]
+		return self._stageLastState  
+	def extend(self, val):
+		return self._stageLastState.extend(val)
+
+	@property
+	def taskLastState(self):
+		"""'taskLastState' property."""
+		return self._taskLastState
+	@taskLastState.setter
+	def taskLastState(self, value):
+		self._taskLastState = value
+	def __getitem__(self, idx):
+		return self._taskLastState[idx]
+	def __setitem__(self, idx, value):
+		self._taskLastState[idx] = value
+	def append(self, val):
+		self._taskLastState = self._taskLastState + [val]
+		return self._taskLastState  
+	def extend(self, val):
+		return self._taskLastState.extend(val)
 
 	@property
 	def task_state_values(self):
@@ -427,31 +577,54 @@ def testReader(glob): # prototype for changes-scanning file parsing
 		except:
 			continue
 		
-		if name == glob.pst:
+		if name == "pipeline":
 			if eventName.find("publishing sync ack for obj with state") != -1:
 				event = eventName.split() # trim the start of this string
 				event = event[-1] # get last element - state description
-				#if eventName.find("received obj with state") != -1:
-				#	event = eventName.split()
-				#	event = event[4]
 				
 				glob.hasBeenModified = True
-				if glob.pst == "pipeline":
-					eventNum = glob.pipeline_state_values[event]
-				elif glob.pst == "stage":
-					eventNum = glob.stage_state_values[event]
-				else:
-					eventNum = glob.task_state_values[event]
+				
+				eventNum = glob.pipeline_state_values[event]
 				
 				nameID = int(nameID)
-				#print [nameID, eventNum] 
 				stateList = [nameID, eventNum] # TODO: can remove nameID to save mem
-				glob.states.append(stateList)
-				glob.stateHistory.append([nameID, -1, eventNum])
-				glob.newIndex += 1
+				glob.pipelineStates.append(stateList)
+				glob.pipelineStateHistory.append([nameID, -1, eventNum])
+				glob.pipelineNewIndex += 1
+
+		elif name == "stage":
+			if eventName.find("publishing sync ack for obj with state") != -1:
+				event = eventName.split() # trim the start of this string
+				event = event[-1] # get last element - state description
+				
+				glob.hasBeenModified = True
+				
+				eventNum = glob.stage_state_values[event]
+				
+				nameID = int(nameID)
+				stateList = [nameID, eventNum] # TODO: can remove nameID to save mem
+				glob.stageStates.append(stateList)
+				glob.stageStateHistory.append([nameID, -1, eventNum])
+				glob.stageNewIndex += 1
+
+		else:
+			if eventName.find("publishing sync ack for obj with state") != -1:
+				event = eventName.split() # trim the start of this string
+				event = event[-1] # get last element - state description
+				
+				glob.hasBeenModified = True
+				
+				eventNum = glob.task_state_values[event]
+				
+				nameID = int(nameID)
+				stateList = [nameID, eventNum] # TODO: can remove nameID to save mem
+				glob.taskStates.append(stateList)
+				glob.taskStateHistory.append([nameID, -1, eventNum])
+				glob.taskNewIndex += 1
 	
 	
-def doGraphing(glob):	
+def doGraphing(glob, myPST):
+	glob.pst = myPST # what we are plotting	
 	p = createPlot(glob)
 	glob.hasBeenModified = False
 	return p
@@ -461,50 +634,87 @@ def plotTotal(glob):
 	# go through new collected data and add it to the taskStatesTotal (= y axis data) array
 	# assume there is new data
 	item = []
-	while glob.lastIndex < glob.newIndex: # plot-specific algorithm for the SUM of the total number of tasks that have passed through a state
-		item = glob.states[glob.lastIndex] 
-		glob.lastIndex += 1
 
-		if glob.pst == "pipeline": # increment the state that the task is in
+	if glob.pst == "pipeline":
+		while glob.pipelineLastIndex < glob.pipelineNewIndex: # plot-specific algorithm for the SUM of the total number of tasks that have passed through a state
+			item = glob.pipelineStates[glob.pipelineLastIndex] 
+			glob.pipelineLastIndex += 1
 			glob.pipelineStatesTotal[item[1]] += 1 
-		elif glob.pst == "stage":
+
+	elif glob.pst == "stage":
+		while glob.stageLastIndex < glob.stageNewIndex: # plot-specific algorithm for the SUM of the total number of tasks that have passed through a state
+			item = glob.stageStates[glob.stageLastIndex] 
+			glob.stageLastIndex += 1
 			glob.stageStatesTotal[item[1]] += 1 
-		else:
+
+	else:
+		while glob.taskLastIndex < glob.taskNewIndex: # plot-specific algorithm for the SUM of the total number of tasks that have passed through a state
+			item = glob.taskStates[glob.taskLastIndex] 
+			glob.taskLastIndex += 1
 			glob.taskStatesTotal[item[1]] += 1 
 		
 
 def plotCurrent(glob):
-	while glob.lastIndex < glob.newIndex:
-		item = glob.stateHistory[glob.lastIndex]
-		nameID = item[0]
-		newState = item[2]
 
-		try:
-			oldState = glob.lastState[nameID] # access existing element
-			glob.lastState[nameID] = newState # update state
+	if glob.pst == "pipeline":
+		while glob.pipelineLastIndex < glob.pipelineNewIndex:
+			item = glob.pipelineStateHistory[glob.pipelineLastIndex]
+			nameID = item[0]
+			newState = item[2]
 
-			# decrement last state, increment new state
-			if glob.pst == "pipeline":
+			try:
+				oldState = glob.pipelineLastState[nameID] # access existing element
+				glob.pipelineLastState[nameID] = newState # update state
+
+				# decrement last state, increment new state
 				glob.pipelineStatesTotal[oldState] -= 1
 				glob.pipelineStatesTotal[newState] += 1
-			elif glob.pst == "stage":
+				
+			except:
+				glob.pipelineLastState[nameID] = newState # create new element in dictionary
+				glob.pipelineStatesTotal[0] += 1 # increment state 0
+
+			glob.pipelineLastIndex += 1
+
+	elif glob.pst == "stage":
+		while glob.stageLastIndex < glob.stageNewIndex:
+			item = glob.stageStateHistory[glob.stageLastIndex]
+			nameID = item[0]
+			newState = item[2]
+
+			try:
+				oldState = glob.stageLastState[nameID] # access existing element
+				glob.stageLastState[nameID] = newState # update state
+
+				# decrement last state, increment new state
 				glob.stageStatesTotal[oldState] -= 1
 				glob.stageStatesTotal[newState] += 1
-			else:
+				
+			except:
+				glob.stageLastState[nameID] = newState # create new element in dictionary
+				glob.stageStatesTotal[0] += 1 # increment state 0
+
+			glob.stageLastIndex += 1
+
+	else:
+		while glob.taskLastIndex < glob.taskNewIndex:
+			item = glob.taskStateHistory[glob.taskLastIndex]
+			nameID = item[0]
+			newState = item[2]
+
+			try:
+				oldState = glob.taskLastState[nameID] # access existing element
+				glob.taskLastState[nameID] = newState # update state
+
+				# decrement last state, increment new state
 				glob.taskStatesTotal[oldState] -= 1
 				glob.taskStatesTotal[newState] += 1
-		except:
-			glob.lastState[nameID] = newState # create new element in dictionary
+				
+			except:
+				glob.taskLastState[nameID] = newState # create new element in dictionary
+				glob.taskStatesTotal[0] += 1 # increment state 0
 
-			if glob.pst == "pipeline":
-				glob.pipelineStatesTotal[0] += 1 # increment state 0
-			elif glob.pst == "stage":
-				glob.pipelineStatesTotal[0] += 1
-			else:
-				glob.taskStatesTotal[0] += 1
-			
-		glob.lastIndex += 1
-
+			glob.taskLastIndex += 1
 
 def createPlot(glob):
 

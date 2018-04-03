@@ -13,20 +13,13 @@
 	var plottedBefore = false;
 	
 	function start() {
-		//var type = getPlotType();
-		//document.getElementById("plotName").innerHTML = type; // set the text above the plot
-		
 		setInterval(server, 3000);
 	}
 
 	function getPlot() { 
 		var type = localStorage.getItem("plot");
+		localStorage.setItem("plot", "old"); // get a plot from previous simulation
 		return type;
-	}
-
-	function getPST() {
-		var pst = localStorage.getItem("pst");
-		return pst;
 	}
 
 	function getPlotType() {
@@ -36,7 +29,6 @@
 
 	function setPlotURL(url) {
 		document.getElementById("graph1").srcdoc = url;
-		//url = "https://plot.ly/~Satguide2012/40";
 	}
 
 	function checkURL(url) {
@@ -63,12 +55,11 @@
 		}
 
 		var plot = getPlot();
-		var pst = getPST();
 		var plotType = getPlotType();
 
 		req.open("POST", "http://localhost:5000/", true);
 		req.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
- 		req.send("plot=" + plot + "&pst=" + pst + "&plotType=" + plotType);
+ 		req.send("plot=" + plot + "&plotType=" + plotType);
 	}
 
 	</script>
@@ -77,11 +68,12 @@
 	
 <h1>DASHBOARD</h1>
 
-<p id="plotName"></p>
+<div style="text-align:right">
+<a href="index.html">Select a new plot</a>
+</div>
 
 <div class="graphDiv">
-<iframe id="graph1" scrolling='no' style="width:100%; height:600px; border:none" seamless></iframe>
-<!--<iframe id="graph2" scrolling='no' style="width:0; height:0; border:none" seamless></iframe>-->
+<iframe id="graph1" scrolling='no' style="width:100%; height:1200px; border:none" seamless></iframe>
 </div>
     
 

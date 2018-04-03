@@ -9,18 +9,8 @@
 	<script>
 		function setPlotAndRedirect() {
 			
-			var pst = "";
 			var plotType = "";
 
-			var radioButtons = document.getElementsByName("pst");
-			var length = radioButtons.length;
-			for (var i = 0; i < length; i++) {
-				if (radioButtons[i].checked) {
-					pst = radioButtons[i].value;
-					break;
-				}
-			}
-			
 			radioButtons = document.getElementsByName("plotType");
 			length = radioButtons.length;
 			for (var i = 0; i < length; i++) {
@@ -29,15 +19,13 @@
 					break;
 				}
 			}
-			 
 
-			if (pst === "" || plotType === "") {
-				document.getElementById("error").innerHTML = "Select both buttons please.";
+			if (plotType === "") {
+				document.getElementById("error").innerHTML = "Select a plot type please.";
 				return;
 			}
-
-			localStorage.setItem("plot", "testReader");
-			localStorage.setItem("pst", pst);
+			
+			localStorage.setItem("plot", "new");
 			localStorage.setItem("plotType", plotType);
 
 			var url = "basic.html";
@@ -48,14 +36,7 @@
 
 <h1>DASHBOARD</h1>
 
-<p>Select which entity to parse for:</p><br>
-<form action="">
-  <input type="radio" name="pst" value="pipeline">pipeline<br>
-  <input type="radio" name="pst" value="stage">stage<br>
-  <input type="radio" name="pst" value="task">task
-</form>
-
-<p>Select how the entities selected above should be plotted per execution stage:</p><br>
+<p>Select how the pipeline/stage/task entities should be plotted per execution stage:</p><br>
 <form action="">
   <input type="radio" name="plotType" value="total">total<br>
   <input type="radio" name="plotType" value="current">current
@@ -63,14 +44,6 @@
 
 <button onclick="setPlotAndRedirect()">Show Plot</button><br>
 <p id="error"></p>
-
-<!--<a href="" onClick="setPlotAndRedirect('pst');">pst</p>
-<br>
-<a href="" onClick="setPlotAndRedirect('timeseries');">timeseries</p>
-<br>
-<a href="" onClick="setPlotAndRedirect('taskseries');">taskseries</p>
-<br>
-<a href="" onClick="setPlotAndRedirect('testReader');">testReader</p>-->
 
 </body>
 </html>
