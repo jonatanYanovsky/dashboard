@@ -1,55 +1,50 @@
-import csv
-import time
-import datetime
-import plotly.plotly as py
-import plotly.graph_objs as go
-import os
-import linecache
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
-from bokeh.plotting import figure
-from bokeh.models import ColumnDataSource, FactorRange, ranges, FuncTickFormatter, DataRange1d, SingleIntervalTicker, LinearAxis
-from bokeh.models.glyphs import VBar
-import pandas as pd
-import numpy as np
+# Written by Jonatan Yanovsky
+
+import time # used for implementing timeouts while waiting on new data to be written to logs
+import os # used in getConf
+import linecache # used for parsing individual lines from log files
+from watchdog.observers import Observer # object that scans for any changes to log files
+from watchdog.events import FileSystemEventHandler # event handler used in tandem with the above import
+from bokeh.plotting import figure # for plotting
+from bokeh.models import FuncTickFormatter, SingleIntervalTicker, LinearAxis # for formatting plots
+from bokeh.models.glyphs import VBar # for a vertical bar graph
 
 
 class GlobalData(object): # a data storage container that is passed to almost every function in reader.py
 
 	def __init__(self):
 
-		self._myHandlerDirectory = "" 
-		self._detectedChange = False
-		self._lineNum = 0 # used for parsing
-		self._reachedEnd = False
-		self._hasBeenModified = False
-		self._newPlot = True
-		self._startTime = 0
-		self._limit = 3 # seconds
-		self._stop = False # abort
+		self._myHandlerDirectory = "" # where the log file is located
+		self._detectedChange = False # used by Observer (operating system event handler) to check if the log file has been modified
+		self._lineNum = 0 # store which line we last parsed, so we can start from that line when we continue parsing
+		self._reachedEnd = False # have we parsed to the end of the file
+		self._hasBeenModified = False # whether we have found new data
+		self._startTime = 0 # used for storing the epoch time at which we start parsing, used by timeouts
+		self._limit = 3 # seconds until timeout
+		self._stop = False # should we terminate this process: has ^C been pressed
 
 		self._plotType = "" # plot type: total or current
-		self._pst = "" # parsing for pipeline stage or task?
+		self._pst = "" # graphing for pipeline stage or task?
 	
-		self._pipelineStates = [] # data container for [taskID, state]
-		self._stageStates = [] # data container for [taskID, state]
-		self._taskStates = [] # data container for [taskID, state]
+		self._pipelineStates = [] # data container for [ID, state]
+		self._stageStates = []
+		self._taskStates = []
 
-		self._pipelineLastIndex = 0 # used in processing taskStates
-		self._stageLastIndex = 0 # used in processing taskStates
-		self._taskLastIndex = 0 # used in processing taskStates
+		self._pipelineLastIndex = 0 # used in processing event states in graphing
+		self._stageLastIndex = 0 
+		self._taskLastIndex = 0
 
-		self._pipelineNewIndex = 0 # used in processing taskStates
-		self._stageNewIndex = 0 # used in processing taskStates
-		self._taskNewIndex = 0 # used in processing taskStates
+		self._pipelineNewIndex = 0 # used in processing event states in graphing
+		self._stageNewIndex = 0
+		self._taskNewIndex = 0 
 
-		self._pipelineStateHistory = []
+		self._pipelineStateHistory = [] # used in processing event states in graphing
 		self._stageStateHistory = []
 		self._taskStateHistory = []
 
 		self._pipelineLastState = {}
 		self._stageLastState = {}
-		self._taskLastState = {} # dictionary holding last known state of each task
+		self._taskLastState = {} # dictionary holding last known state of each pst
 
 		self._task_state_values = { # dictionary to convert from string to int to save mem
 			'SCHEDULING': 0,
@@ -63,7 +58,7 @@ class GlobalData(object): # a data storage container that is passed to almost ev
 			'FAILED': 8,
 			'CANCELED': 9
 		}
-		self._taskStatesTotal = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] # used for plotting task states
+		self._taskStatesTotal = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] # used for plotting all the states possible for that pst
 	
 		self._stage_state_values = {
 			'SCHEDULING': 0,
@@ -82,7 +77,7 @@ class GlobalData(object): # a data storage container that is passed to almost ev
 		}
 		self._pipelineStatesTotal = [0, 0, 0, 0]
 
-	def reset(self):
+	def reset(self): # to restart parsing
 		self.__init__()
 		print "reset self"
 
@@ -127,14 +122,6 @@ class GlobalData(object): # a data storage container that is passed to almost ev
 	@hasBeenModified.setter
 	def hasBeenModified(self, value):
 		self._hasBeenModified = value
-
-	@property
-	def newPlot(self):
-		"""'newPlot' property."""
-		return self._newPlot
-	@newPlot.setter
-	def newPlot(self, value):
-		self._newPlot = value
 
 	@property
 	def startTime(self):
@@ -450,49 +437,50 @@ class GlobalData(object): # a data storage container that is passed to almost ev
 		self._pipelineStatesTotal[idx] = value
 
 
-class MyHandler(FileSystemEventHandler): # used to detect changes, works in tandem with scanForChanges
-	def on_modified(self, event):
+class MyHandler(FileSystemEventHandler): # class used to detect changes, works in tandem with scanForChanges
+	def on_modified(self, event): # if the Observer has detected a change to a file
 
-		if self.detectedChange == True: # don't print more output than necessary
+		if self.detectedChange == True: # don't print multiple copies of the same line
 			return
 
-		if event.src_path == self.myHandlerDirectory + "radical.entk.appmanager.0000.prof":
+		if event.src_path == self.myHandlerDirectory + "radical.entk.appmanager.0000.prof": # if a change has occurred at the log file's location
 			print "detected change" 
 			self.detectedChange = True
 
-	myHandlerDirectory = "" 
-	detectedChange = False
+	# public variables
+	myHandlerDirectory = "" # a copy of the myHandlerDirectory variable used in GlobalData
+	detectedChange = False # a copy of the detectedChange variable used in GlobalData
 
 
-def scanForChanges(glob):
+def scanForChanges(glob): # a function that waits for new changes to the log file
 
-	if glob.stop == True:
+	if glob.stop == True: # do not wait for changes if we need to terminate
 		return
 
-	glob.detectedChange = False
+	glob.detectedChange = False # overwrite variable so that we scan for new changes
 
-	event_handler = MyHandler()
-	event_handler.myHandlerDirectory = glob.myHandlerDirectory
+	event_handler = MyHandler() # create event handler class
+	event_handler.myHandlerDirectory = glob.myHandlerDirectory # copy variable over to event handler
 
-	observer = Observer()
-	observer.schedule(event_handler, path=glob.myHandlerDirectory, recursive=False)
-	observer.start()
+	observer = Observer() # create an object to scan for changes
+	observer.schedule(event_handler, path=glob.myHandlerDirectory, recursive=False) # init
+	observer.start() # start waiting for changes
 
 	try:
-		while event_handler.detectedChange == False:
-			time.sleep(1) 
-			t = time.time() - glob.startTime
+		while event_handler.detectedChange == False: # no new changes
+			time.sleep(1) # wait
+			t = time.time() - glob.startTime # record the time
 			print "scanning for changes, time = " + str(t)
 			
-			if t > glob.limit:
+			if t > glob.limit: # timeout
 				print "time limit reached, returning"
 				break
 
-		observer.stop()
+		observer.stop() # kill wait object
 		observer.join()
 		return
 
-	except KeyboardInterrupt:
+	except KeyboardInterrupt: # ^C pressed so terminate
 		glob.stop = True
 		observer.stop()
 		observer.join()
@@ -501,10 +489,10 @@ def scanForChanges(glob):
 
 def testReader(glob): # prototype for changes-scanning file parsing
 
-	if glob.reachedEnd == True:
-		return -1
+	if glob.reachedEnd == True: # do not parse if done parsing
+		return 0
 
-	glob.startTime = time.time()
+	glob.startTime = time.time() # for timeout
 
 	if glob.myHandlerDirectory != "":
 		myDir = glob.myHandlerDirectory # continue from last file
@@ -512,30 +500,23 @@ def testReader(glob): # prototype for changes-scanning file parsing
 	else:
 		myDir = getConf(glob) # start fresh
 		if myDir == -1:
-			return -2
-		lineCount = 1
+			return -1 # if we did not find a single EnTK execution
+		lineCount = 1 # start from line 1, skip line 0
 
-	if myDir == -1:
-		print("Config file is unreadable")
-		return
+	myFile = myDir + "radical.entk.appmanager.0000.prof" # set our file at this location
 
-	myFile = myDir + "radical.entk.appmanager.0000.prof"
-
-	numElements = 1 
-
-	while 1: # read every line in the file
-		row = linecache.getline(myFile, lineCount)
-		lineCount += 1
-
-		if row == "": # we did NOT encounter the "END", so we must keep scanning until we reach the end
-			print "Keep scanning"
+	while 1: # read every line in the file, starting from the last line
+		row = linecache.getline(myFile, lineCount) # get the current line
+		
+		if row == "": # no data on this line. Wait for EnTK to write new data
+			print "Waiting for changes to log file"
 			
-			scanForChanges(glob)
+			scanForChanges(glob) # wait for changes to log file
 
 			t = time.time() - glob.startTime
 			print "parser, time: " + str(t)
 			
-			if t > glob.limit:
+			if t > glob.limit: # we have done enough parsing (including the time spent scanning for changes) for now
 				print "time limit reached, returning"
 				return
 
@@ -544,81 +525,77 @@ def testReader(glob): # prototype for changes-scanning file parsing
 				glob.reachedEnd = True
 				return
 
-			linecache.checkcache(myFile) # used for when the file has been modified
-			lineCount -= 1 # go back and reread the line
-			continue
+			linecache.checkcache(myFile) # used for when the file has been modified by EnTK while we were waiting for changes
+			
+			continue # go back and reread the line
 
-		array = row.split(',')  # split row into elements	
+		lineCount += 1 # move to next line
+		glob.lineNum = lineCount # save current line number for later parsing
+		array = row.split(',') # split parsed row into string elements	
 
 		try:
-			#epoch = array[0]
-			eventName = array[1]
+			eventName = array[1] # try to get second element: the string that contains event data
 		except:
-			eventName = -1
-
-		glob.lineNum = lineCount
+			continue # skip to next line
 
 		if eventName == "END":
 			print "END" # we have reached the last line, we can stop scanning for changes at this point
 			glob.reachedEnd = True
 			break
 		
-		try: # gets the cell potentially containing the pipeline, stage, or task
+		try: # gets the cell potentially containing the pipeline, stage, or task (pst)
 			pstName = array[4]
 		except:
-			pstName = -1
+			continue # skip to next line
 		
-		parts = pstName.split('.')
-		nameID = 0
+		parts = pstName.split('.') # parse for pst information
+		nameID = 0 # init pst ID, ex: 0004
 
 		try:
-			name = parts[2] # check for pipeline
-			nameID = parts[3]
+			name = parts[2] # pst identifier
+			nameID = parts[3] # pst number, not used for current plots
 		except:
 			continue
 		
 		if name == "pipeline":
-			if eventName.find("publishing sync ack for obj with state") != -1:
+			if eventName.find("publishing sync ack for obj with state") != -1: # if the event string contains useful data
 				event = eventName.split() # trim the start of this string
-				event = event[-1] # get last element - state description
+				event = event[-1] # get last element - state description: SCHEDULING, DONE, FAILED, etc
 				
-				glob.hasBeenModified = True
+				glob.hasBeenModified = True # we have found new, useful data
 				
-				eventNum = glob.pipeline_state_values[event]
+				eventNum = glob.pipeline_state_values[event] # convert string to integer (state) representation to save memory
+				nameID = int(nameID) # convert string to int
 				
-				nameID = int(nameID)
-				stateList = [nameID, eventNum] # TODO: can remove nameID to save mem
-				glob.pipelineStates.append(stateList)
-				glob.pipelineStateHistory.append([nameID, -1, eventNum])
-				glob.pipelineNewIndex += 1
+				glob.pipelineStates.append(eventNum) # store the new state
+				glob.pipelineStateHistory.append([nameID, -1, eventNum]) # 
+				glob.pipelineNewIndex += 1 # more data to process for graphing
 
 		elif name == "stage":
 			if eventName.find("publishing sync ack for obj with state") != -1:
-				event = eventName.split() # trim the start of this string
-				event = event[-1] # get last element - state description
+				event = eventName.split() 
+				event = event[-1]
 				
 				glob.hasBeenModified = True
 				
 				eventNum = glob.stage_state_values[event]
-				
 				nameID = int(nameID)
-				stateList = [nameID, eventNum] # TODO: can remove nameID to save mem
-				glob.stageStates.append(stateList)
+
+				glob.stageStates.append(eventNum)
 				glob.stageStateHistory.append([nameID, -1, eventNum])
 				glob.stageNewIndex += 1
 
 		else:
 			if eventName.find("publishing sync ack for obj with state") != -1:
-				event = eventName.split() # trim the start of this string
-				event = event[-1] # get last element - state description
-				
+				event = eventName.split()
+				event = event[-1]
+
 				glob.hasBeenModified = True
 				
 				eventNum = glob.task_state_values[event]
-				
 				nameID = int(nameID)
-				stateList = [nameID, eventNum] # TODO: can remove nameID to save mem
-				glob.taskStates.append(stateList)
+
+				glob.taskStates.append(eventNum)
 				glob.taskStateHistory.append([nameID, -1, eventNum])
 				glob.taskNewIndex += 1
 	
@@ -626,55 +603,52 @@ def testReader(glob): # prototype for changes-scanning file parsing
 def doGraphing(glob, myPST):
 	glob.pst = myPST # what we are plotting	
 	p = createPlot(glob)
-	glob.hasBeenModified = False
 	return p
 
 
 def plotTotal(glob):
-	# go through new collected data and add it to the taskStatesTotal (= y axis data) array
-	# assume there is new data
-	item = []
 
+	# algorithm for the SUM of the total number of tasks that have passed through each state
 	if glob.pst == "pipeline":
-		while glob.pipelineLastIndex < glob.pipelineNewIndex: # plot-specific algorithm for the SUM of the total number of tasks that have passed through a state
-			item = glob.pipelineStates[glob.pipelineLastIndex] 
-			glob.pipelineLastIndex += 1
-			glob.pipelineStatesTotal[item[1]] += 1 
+		while glob.pipelineLastIndex < glob.pipelineNewIndex: # if new data
+			item = glob.pipelineStates[glob.pipelineLastIndex] # get the next event from the data structure
+			glob.pipelineLastIndex += 1 # move to next saved event
+			glob.pipelineStatesTotal[item] += 1 # add to the total count for event: the list containing the y-axis data
 
 	elif glob.pst == "stage":
-		while glob.stageLastIndex < glob.stageNewIndex: # plot-specific algorithm for the SUM of the total number of tasks that have passed through a state
+		while glob.stageLastIndex < glob.stageNewIndex:
 			item = glob.stageStates[glob.stageLastIndex] 
 			glob.stageLastIndex += 1
-			glob.stageStatesTotal[item[1]] += 1 
+			glob.stageStatesTotal[item] += 1 
 
 	else:
-		while glob.taskLastIndex < glob.taskNewIndex: # plot-specific algorithm for the SUM of the total number of tasks that have passed through a state
+		while glob.taskLastIndex < glob.taskNewIndex:
 			item = glob.taskStates[glob.taskLastIndex] 
 			glob.taskLastIndex += 1
-			glob.taskStatesTotal[item[1]] += 1 
+			glob.taskStatesTotal[item] += 1 
 		
 
 def plotCurrent(glob):
 
+	# algorithm for the number of tasks that ARE in each state
 	if glob.pst == "pipeline":
-		while glob.pipelineLastIndex < glob.pipelineNewIndex:
-			item = glob.pipelineStateHistory[glob.pipelineLastIndex]
-			nameID = item[0]
-			newState = item[2]
+		while glob.pipelineLastIndex < glob.pipelineNewIndex: # if new data
+			item = glob.pipelineStateHistory[glob.pipelineLastIndex] # get the next event from the data structure
+			nameID = item[0] # get the pst ID
+			newState = item[2] # get the new state for that pst
 
 			try:
-				oldState = glob.pipelineLastState[nameID] # access existing element
-				glob.pipelineLastState[nameID] = newState # update state
-
-				# decrement last state, increment new state
+				oldState = glob.pipelineLastState[nameID] # get the last state
+				glob.pipelineLastState[nameID] = newState # update with the new state
+				# in the list containing the y-axis data, decrement the last state, increment new state 
 				glob.pipelineStatesTotal[oldState] -= 1
 				glob.pipelineStatesTotal[newState] += 1
 				
-			except:
-				glob.pipelineLastState[nameID] = newState # create new element in dictionary
+			except: # there was no previous state, this is a newly created pst
+				glob.pipelineLastState[nameID] = newState # create new element in state dictionary
 				glob.pipelineStatesTotal[0] += 1 # increment state 0
 
-			glob.pipelineLastIndex += 1
+			glob.pipelineLastIndex += 1 # move to next event
 
 	elif glob.pst == "stage":
 		while glob.stageLastIndex < glob.stageNewIndex:
@@ -683,16 +657,15 @@ def plotCurrent(glob):
 			newState = item[2]
 
 			try:
-				oldState = glob.stageLastState[nameID] # access existing element
-				glob.stageLastState[nameID] = newState # update state
+				oldState = glob.stageLastState[nameID]
+				glob.stageLastState[nameID] = newState 
 
-				# decrement last state, increment new state
 				glob.stageStatesTotal[oldState] -= 1
 				glob.stageStatesTotal[newState] += 1
 				
 			except:
-				glob.stageLastState[nameID] = newState # create new element in dictionary
-				glob.stageStatesTotal[0] += 1 # increment state 0
+				glob.stageLastState[nameID] = newState 
+				glob.stageStatesTotal[0] += 1
 
 			glob.stageLastIndex += 1
 
@@ -703,115 +676,121 @@ def plotCurrent(glob):
 			newState = item[2]
 
 			try:
-				oldState = glob.taskLastState[nameID] # access existing element
-				glob.taskLastState[nameID] = newState # update state
+				oldState = glob.taskLastState[nameID]
+				glob.taskLastState[nameID] = newState
 
-				# decrement last state, increment new state
 				glob.taskStatesTotal[oldState] -= 1
 				glob.taskStatesTotal[newState] += 1
 				
 			except:
-				glob.taskLastState[nameID] = newState # create new element in dictionary
-				glob.taskStatesTotal[0] += 1 # increment state 0
+				glob.taskLastState[nameID] = newState
+				glob.taskStatesTotal[0] += 1
 
 			glob.taskLastIndex += 1
 
 def createPlot(glob):
 
-	if glob.plotType == "total":
+	if glob.plotType == "total": # which plot do we want
 		plotTotal(glob)
 	else:
 		plotCurrent(glob)
 
 	if glob.pst == "pipeline":
-		xx = [1, 2, 3, 4]
-		yy = glob.pipelineStatesTotal
-		myColor = "orange"
+		xx = [1, 2, 3, 4] # set the x-axis range
+		yy = glob.pipelineStatesTotal # get the y-axis data
+		myColor = "orange" # set the color
+
 	elif glob.pst == "stage":
 		xx = [1, 2, 3, 4, 5]
 		yy = glob.stageStatesTotal
 		myColor = "green"
+
 	else:
 		xx = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 		yy = glob.taskStatesTotal
 		myColor = "blue"
 
-	p = figure(plot_height=400, plot_width=800, title=glob.plotType, toolbar_location=None, tools="")
-	p.vbar(x=xx, width=0.95, bottom=0, top=yy, color=myColor)
-	p.xaxis.visible = False # This axis is broken, so hide it.
-	p.yaxis.visible = False # ^^ get rid of minor ticks
-
+	p = figure(plot_height=400, plot_width=800, title=glob.plotType, toolbar_location=None, tools="") # make an empty plot
+	p.vbar(x=xx, width=0.95, bottom=0, top=yy, color=myColor) # add a vertical bar glyph
 	
+	p.xaxis.visible = False # This axis contains minor ticks that I cannot remove (1.5, 2.5) which messes up categorical state representation, so hide it.
+	p.yaxis.visible = False # same as above
 
-	ticker = SingleIntervalTicker(interval=1, num_minor_ticks=0)
-	xaxis = LinearAxis(ticker=ticker)
-	p.add_layout(xaxis, 'below') # add a new x-axis which works properly (no 1.5, 2.5, etc ticks)
-	yaxis = LinearAxis(ticker=ticker)
-	p.add_layout(yaxis, 'left') # add a new y-axis which works properly (no 1.5, 2.5, etc ticks)
+	ticker = SingleIntervalTicker(interval=1, num_minor_ticks=0) # create new axis format
 
-	p.yaxis.axis_label = glob.pst
-	p.yaxis.axis_label_text_font_style = "normal"
+	xaxis = LinearAxis(ticker=ticker) # create the x-axis
+	p.add_layout(xaxis, 'below') # add the new x-axis which works properly (no 1.5, 2.5, etc ticks)
 
-	p.y_range.start = 0
-	p.xgrid.grid_line_color = None
-	p.xaxis.major_label_orientation = 1
+	yaxis = LinearAxis(ticker=ticker) # create the y-axis
+	p.add_layout(yaxis, 'left') # add the new y-axis which works properly (no 1.5, 2.5, etc ticks)
+
+	p.yaxis.axis_label = glob.pst # y-axis label: total or current
+	p.yaxis.axis_label_text_font_style = "normal" # non-italicized
+
+	#p.y_range.start = 0 # start at 
+	p.xgrid.grid_line_color = None # no grid color
+	p.xaxis.major_label_orientation = 1 # 45 degree sloped x-axis labels
 
 	p.xaxis.minor_tick_line_color = None  # turn off x-axis minor ticks
 	p.yaxis.minor_tick_line_color = None  # turn off y-axis minor ticks
 
-	if glob.pst == "pipeline":
+	if glob.pst == "pipeline": # init categorical states
 		theStates = ["", "SCHEDULING", "DONE", "FAILED", "CANCELED", ""]
 	elif glob.pst == "stage":
 		theStates = ["", "SCHEDULING", "SCHEDULED", "DONE", "FAILED", "CANCELED", ""]
 	else:
 		theStates = ["", "SCHEDULING", "SCHEDULED", "SUBMITTING", "SUBMITTED", "EXECUTED", "DEQUEUEING", "DEQUEUED", "DONE", "FAILED", "CANCELED", ""]
 
-	label_dict = {}
-	for i, s in enumerate(theStates): # convert to dictionary, put this in __init__
+	label_dict = {} # convert above states to dictionary form
+	for i, s in enumerate(theStates): 
 		label_dict[i] = s
 	
 	p.xaxis.formatter = FuncTickFormatter(code="""
 	    var labels = %s;
 	    return labels[tick];
-	""" % label_dict) # convert x-axis-labels into categorical labels: 1 -> "INITIAL", etc
+	""" % label_dict) # convert x-axis labels into categorical labels: 3 -> "DONE", etc
 
 	return p
 
 
-def getConf(glob):	# get data stored in configuration file, and find the directory that it points to
-	with open('dashboard.conf') as conf:
+def getConf(glob): # get data stored in configuration file, and find the directory that it points to
+	with open('dashboard.conf') as conf: # open configuration file
 		conf.readline() # skip first line
 		row = conf.readline() # get second line, the path to the example/executable, but not the output
-		if row == "" or row == None:
-			return -1
+		if row == "" or row == None: # sanity check
+			print "Please check your dashboard.conf file and add the path to your EnTK executable file"
+			os._exit(1) # terminate
 	
 		directories = []
-		rs = row.rstrip()
+		rs = row.rstrip() # get rid of line-terminating-character
 
-		filesInDir = os.listdir(row.rstrip())
+		filesInDir = os.listdir(row.rstrip()) # get files from that directory specified in dashboard.conf
+
 		if len(filesInDir) == 0:
-			return -1
+			print "Please check your dashboard.conf file and add the path to your EnTK executable file, and make sure to start an EnTK execution before running dashboard"
+			os._exit(1) # terminate
 
-		for x in filesInDir: # only the names of the files/directories
+		for x in filesInDir: # for every file in the directory
 
-			z = rs + x # the absolute path to the directory
-			if os.path.isdir(z): #print x
-				name =  x.split('.')
-				if name[0] == "re":
-					directories.append(x)
+			z = rs + x # the absolute path to the file
+			if os.path.isdir(z): # if the file is a directory, we are in the right place, EnTK logs should be stored in named re.session.user1.user2.num1.num2
+				name =  x.split('.') # split up to parse for latest EnTK execution
+				if name[0] == "re": # if it starts with re: 
+					directories.append(x) # we found an execution
 
 		highestValue = 0
-
+		# find today's (or most recent) executions - the highest numbered ones in the list
 		for myDir in directories:
-			num = myDir.split('.')[4] # get today's executions
+			num = myDir.split('.')[4] 
 			if num > highestValue:
 				highestValue = num
 
+
 		directories2 = []
-	
-		for myDir in directories:
-			num = myDir.split('.')[4] # place largest numbers into another list
-			if num == highestValue:
+		# place most recent into a separate list
+		for myDir in directories: 
+			num = myDir.split('.')[4] # get num1 
+			if num == highestValue: 
 				directories2.append(myDir)
 
 		highestValue = 0
@@ -819,21 +798,20 @@ def getConf(glob):	# get data stored in configuration file, and find the directo
 		idx = 0
 
 		# again, look through this list to find the most recent (or current execution)
-		
-		for myDir in directories2:
-			num = myDir.split('.')[5]
+		for myDir in directories2: 
+			num = myDir.split('.')[5] # get num2
 			if num > highestValue:
 				highestValue = num
 				highestIndex = idx
 			idx += 1
 
-		try:
+		try: # get the directory
 			theDirectory = directories2[highestIndex]
 		except: 
-			return -1
+			return -1 # If the file does not exist
 
-		ret = rs + theDirectory.rstrip() + "/"
-		glob.myHandlerDirectory = ret
+		ret = rs + theDirectory.rstrip() + "/" # the path to directory
+		glob.myHandlerDirectory = ret # save it in memory
 
 		return rs + theDirectory.rstrip() + "/" # the path to the directory
 
