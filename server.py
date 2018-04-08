@@ -1,17 +1,20 @@
 # Written by Jonatan Yanovsky
 
-from flask import Flask, render_template # used for the Flask server
+from flask import Flask # used for the Flask server
 from flask import request # used to parse the frontend graphing request
 from flask_cors import CORS # for localhost communication between frontend and backend
 import reader # the file that contains graphing and parsing functionality
 import webbrowser # a file from GitHub (not my own) that can open a webpage in user's browser
-from bokeh.embed import components # for components(), which is used to embed plots in an iframe
 import os # for os._exit(1) to terminate execution
+import globalData # the file that contains the "glob" object
 
 
-glob = reader.GlobalData() # intialize data storage container
+glob = globalData.GlobalData() # intialize data storage container
 app = Flask(__name__) # start the server
 CORS(app) # allow communication from server to browser over localhost (same machine). This is acceptable as dashboard is not a web application, but rather a local-running application
+#reader.testReader(glob) # only for testing
+#reader.doAnalytics(glob)
+#os._exit(1) # only for testing - terminate
 webbrowser.open_new_tab("index.html") # open the webpage in the browser: start the frontend
 
 
@@ -42,32 +45,14 @@ def getPlot(): # our primary controller function
 
 		if glob.hasBeenModified == True: # new data has appeared, plot it
 			print "performing graphing"
-
-			plot = reader.doGraphing(glob, "pipeline") # plot the pipeline data
-			myDiv1, myScript1 = components(plot) # get components of the plot
-			plot = reader.doGraphing(glob, "stage") # do the same for other plots
-			myDiv2, myScript2 = components(plot)
-			plot = reader.doGraphing(glob, "task")
-			myDiv3, myScript3 = components(plot)
-
-			glob.hasBeenModified = False # we are done plotting 
-			# embed those plot components into an html file; send it to frontend
-			return render_template("frame.html", div1=myDiv1, script1=myScript1, div2=myDiv2, script2=myScript2, div3=myDiv3, script3=myScript3)
+			return reader.doGraphing(glob)
 
 		if glob.reachedEnd == True: # we have not seen any new data
 			if req == "new": # request from new window, but requesting a plot that has been previously parsed (its data is saved, so we do not need to parse a second time)
 				# we do not store plots (yet), so redo graphing
 				print "returning old graph" 
-				plot = reader.doGraphing(glob, "pipeline")
-				myDiv1, myScript1 = components(plot)
-				plot = reader.doGraphing(glob, "stage")
-				myDiv2, myScript2 = components(plot)
-				plot = reader.doGraphing(glob, "task")
-				myDiv3, myScript3 = components(plot)
-
-				glob.hasBeenModified = False # we are done plotting 
-				return render_template("frame.html", div1=myDiv1, script1=myScript1, div2=myDiv2, script2=myScript2, div3=myDiv3, script3=myScript3)
-
+				return reader.doGraphing(glob)
+				
 			else: # existing window, but no need to display new data
 				print "We've reached the end of the log file. Your EnTK execution has concluded."
 				return "sleep"
