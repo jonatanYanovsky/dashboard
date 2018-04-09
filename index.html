@@ -32,6 +32,14 @@
 			window.location.href = url;
 		}
 
+		function setPlotAndRedirect2() {
+			localStorage.setItem("plot", "new");
+			localStorage.setItem("plotType", "visualization");
+
+			var url = "basic.html";
+			window.location.href = url;			
+		}
+
 	</script>
 
 <h1>DASHBOARD</h1>
@@ -43,7 +51,10 @@
 </form>
 
 <button onclick="setPlotAndRedirect()">Show Plot</button><br>
-<p id="error"></p>
+<p id="error"></p><br><br>
+
+<p>Perform an Analytics visualization:</p><br>
+<button onclick="setPlotAndRedirect2()">Show Analytics</button><br>
 
 </body>
 </html>

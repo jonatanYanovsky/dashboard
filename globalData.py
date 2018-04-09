@@ -1,3 +1,4 @@
+# Written by Jonatan Yanovsky
 
 class GlobalData(object): # a data storage container that is passed to almost every function in reader.py
 
@@ -66,9 +67,9 @@ class GlobalData(object): # a data storage container that is passed to almost ev
 		}
 		self._pipelineStatesTotal = [0, 0, 0, 0]
 
-		self._taskDuration = [[0.0, 0.0]]
-		self._taskStartTimeTotal = {}
-		self._taskStartTimeExecution = {}
+		self._taskDuration = [[0.0, 0.0]] # used to hold the time for total, executing
+		self._taskStartTimeTotal = {} # holds start time for total time visualization
+		self._taskStartTimeExecution = {} # holds start time for executing
 
 	def reset(self): # to restart parsing
 		self.__init__()

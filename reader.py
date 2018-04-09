@@ -351,7 +351,19 @@ def createPlot(glob):
 
 
 def doAnalytics(glob):
-	return taskDistributionPlot(glob)
+
+	glob.pst = "executing" # I should probably create a separate variable instead of using pst
+	plot = taskDistributionPlot(glob) # processing and graphing
+	myDiv1, myScript1 = components(plot) # for embedding
+
+	glob.pst = "total"
+	plot = taskDistributionPlot(glob)
+	myDiv2, myScript2 = components(plot)
+
+	glob.hasBeenModified = False # we are done plotting 
+
+	# embed those plot components into an html file; send it to frontend
+	return render_template("frame2.html", div1=myDiv1, script1=myScript1, div2=myDiv2, script2=myScript2)
 
 
 def taskDistributionAnalytics(glob): # algorithm for the time spent on each task (total + executing)
@@ -359,8 +371,8 @@ def taskDistributionAnalytics(glob): # algorithm for the time spent on each task
 	while glob.taskLastIndex < glob.taskNewIndex: # if new data
 		item = glob.taskStateHistory[glob.taskLastIndex] # get the next event from the data structure
 		nameID = item[0] # get the pst ID
-		newState = item[1]
-		epoch = item[2]
+		newState = item[1] # get the state (the event)
+		epoch = item[2] # get the epoch time (only for tasks)
 
 		# total time spent (including waiting for cpu)
 		if newState == 0: # if SCHEDULING
@@ -401,7 +413,45 @@ def checkIndices(glob, idx): # helper function that fills in "holes" in the task
 def taskDistributionPlot(glob):
 	taskDistributionAnalytics(glob)
 
+	yy = []
+
+	if glob.pst == "total":
+		myColor = "darkviolet"
+		for item in glob.taskDuration: 
+			yy.append(item[0]) # create a list of the data stored in taskDuration
+	else: # "executing"
+		myColor = "navy"
+		for item in glob.taskDuration:
+			yy.append(item[1])
+
+	xx = range(0, len(yy)) # set the x-axis to have the same number of points as the y-axis
+
+	p = figure(plot_height=400, plot_width=800, title=glob.pst, toolbar_location=None, tools="") # make an empty plot
+	p.vbar(x=xx, width=0.95, bottom=0, top=yy, color=myColor) # add a vertical bar glyph
 	
+	p.xaxis.visible = False # This axis contains minor ticks that I cannot remove (1.5, 2.5) which messes up categorical state representation, so hide it.
+	p.yaxis.visible = False # same as above
+
+	ticker = SingleIntervalTicker(interval=1, num_minor_ticks=0) # create new axis format
+
+	xaxis = LinearAxis(ticker=ticker) # create the x-axis
+	p.add_layout(xaxis, 'below') # add the new x-axis which works properly (no 1.5, 2.5, etc ticks)
+
+	yaxis = LinearAxis(ticker=ticker) # create the y-axis
+	p.add_layout(yaxis, 'left') # add the new y-axis which works properly (no 1.5, 2.5, etc ticks)
+
+	p.xaxis.axis_label = "task ID" # x-axis label
+	p.xaxis.axis_label_text_font_style = "normal" # non-italicized
+
+	p.yaxis.axis_label = "time in seconds" # y-axis label: total or current
+	p.yaxis.axis_label_text_font_style = "normal" # non-italicized
+
+	p.xgrid.grid_line_color = None # no grid color
+
+	p.xaxis.minor_tick_line_color = None  # turn off x-axis minor ticks
+	p.yaxis.minor_tick_line_color = None  # turn off y-axis minor ticks
+
+	return p
 
 
 def getConf(glob): # get data stored in configuration file, and find the directory that it points to
