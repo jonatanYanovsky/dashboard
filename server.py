@@ -3,10 +3,11 @@
 from flask import Flask # used for the Flask server
 from flask import request # used to parse the frontend graphing request
 from flask_cors import CORS # for localhost communication between frontend and backend
-import reader # the file that contains graphing and parsing functionality
+import reader # the file that contains parsing functionality
 import webbrowser # a file from GitHub (not my own) that can open a webpage in user's browser
 import os # for os._exit(1) to terminate execution
 import globalData # the file that contains the "glob" object
+import plotting # the file that contains plotting functionality
 
 
 glob = globalData.GlobalData() # intialize data storage container
@@ -43,20 +44,20 @@ def getPlot(): # our primary controller function
 		if glob.hasBeenModified == True: # new data has appeared, plot it
 			if glob.plotType != "visualization": 
 				print "performing graphing" 
-				return reader.doGraphing(glob)
+				return plotting.doGraphing(glob)
 			else:
 				print "performing visualization" 
-				return reader.doAnalytics(glob)
+				return plotting.doAnalytics(glob)
 
 		if glob.reachedEnd == True: # we have not seen any new data
 			if req == "new": # request from new window, but requesting a plot that has been previously parsed (its data is saved, so we do not need to parse a second time)
 				# we do not store plots (yet), so redo graphing
 				if glob.plotType != "visualization":
 					print "returning old graph" 
-					return reader.doGraphing(glob)
+					return plotting.doGraphing(glob)
 				else:
 					print "returning old visualization" 
-					return reader.doAnalytics(glob)
+					return plotting.doAnalytics(glob)
 
 			else: # existing window, but no need to display new data
 				print "We've reached the end of the log file. Your EnTK execution has concluded."
