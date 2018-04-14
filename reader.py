@@ -209,7 +209,6 @@ def getConf(glob): # get data stored in configuration file, and find the directo
 			if num > highestValue:
 				highestValue = num
 
-
 		directories2 = []
 		# place most recent into a separate list
 		for myDir in directories: 

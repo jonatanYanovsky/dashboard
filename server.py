@@ -23,13 +23,11 @@ def getPlot(): # our primary controller function
 	    	req = request.form['plot'] # parse request for either 'new' or 'old'
 		plotType = request.form['plotType'] # 'current' or 'total'
 		
-		if glob.plotType == "": # if we have not already set plotType
-			glob.plotType = plotType
-
-		# if frontend requests a different plot, then reset parsed data, start over
+		# if frontend requests a different plot, then reset only the processed data
 		if glob.plotType != plotType:
-			glob.reset()
-			glob.plotType = plotType
+			glob.resetProcessedData()
+			glob.plotType = plotType # set what we are trying to plot
+			glob.hasBeenModified = True # make new plots
 
 		if glob.stop == True: # if user has pressed ^C
 			os._exit(1) # terminate
@@ -37,7 +35,7 @@ def getPlot(): # our primary controller function
 		if glob.reachedEnd == False: # if we have not parsed to the end of the log
 			print "parsing"
 			returnValue = reader.testReader(glob) # parse
-			if returnValue == -1: # if we should avoid plotting (code below)
+			if returnValue == -1: # error: we should avoid plotting for now
 				print "No EnTK execution data found. Please start your EnTK execution or check your configuration file to point towards the correct directory"
 				return "sleep" # respond to frontend that it should not plot
 
@@ -51,12 +49,11 @@ def getPlot(): # our primary controller function
 
 		if glob.reachedEnd == True: # we have not seen any new data
 			if req == "new": # request from new window, but requesting a plot that has been previously parsed (its data is saved, so we do not need to parse a second time)
-				# we do not store plots (yet), so redo graphing
 				if glob.plotType != "visualization":
-					print "returning old graph" # from memory
+					print "returning old graph from memory"
 					return plotting.doGraphing(glob, True)
 				else:
-					print "returning old visualization" # from memory
+					print "returning old visualization from memory"
 					return plotting.doAnalytics(glob, True)
 
 			else: # existing window, but no need to display new data

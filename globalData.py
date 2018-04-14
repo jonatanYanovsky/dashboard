@@ -71,11 +71,34 @@ class GlobalData(object): # a data storage container that is passed to almost ev
 		self._taskStartTimeTotal = {} # holds start time for total time visualization
 		self._taskStartTimeExecution = {} # holds start time for executing
 
-		self._html = ""
+		self._html = "" # holds the html file that contains plots
+
 
 	def reset(self): # to restart parsing
-		self.__init__()
 		print "reset self"
+		self.__init__()
+		
+
+	def resetProcessedData(self):
+		# reset only the processed data, NOT the data we've parsed already
+		print "reset all processed data (not parsed data)"
+
+		self._pipelineLastIndex = 0
+		self._stageLastIndex = 0 
+		self._taskLastIndex = 0
+
+		self._pipelineLastState = {}
+		self._stageLastState = {}
+		self._taskLastState = {} 
+
+		self._taskStatesTotal = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+		self._stageStatesTotal = [0, 0, 0, 0, 0]
+		self._pipelineStatesTotal = [0, 0, 0, 0]
+
+		self._taskDuration = [[0.0, 0.0]]
+		self._taskStartTimeTotal = {}
+		self._taskStartTimeExecution = {}
+
 
 	# setters and getters below
 
