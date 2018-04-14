@@ -8,24 +8,32 @@ from bokeh.embed import components # for components(), which is used to embed pl
 from flask import render_template # used in doGraphing()
 
 	
-def doGraphing(glob): # plot pst
+def doGraphing(glob, old): # plot pst
 
-	glob.pst = "pipeline" # plot the pipeline data
-	plot = createPlot(glob)
-	myDiv1, myScript1 = components(plot) # get components of the plot
+	if old == False: # a new plot
 
-	glob.pst = "stage" # do the same for other plots
-	plot = createPlot(glob)
-	myDiv2, myScript2 = components(plot)
+		glob.pst = "pipeline" # plot the pipeline data
+		plot = createPlot(glob)
+		myDiv1, myScript1 = components(plot) # get components of the plot
 
-	glob.pst = "task" 
-	plot = createPlot(glob)
-	myDiv3, myScript3 = components(plot)
+		glob.pst = "stage" # do the same for other plots
+		plot = createPlot(glob)
+		myDiv2, myScript2 = components(plot)
 
-	glob.hasBeenModified = False # we are done plotting 
+		glob.pst = "task" 
+		plot = createPlot(glob)
+		myDiv3, myScript3 = components(plot)
 
-	# embed those plot components into an html file; send it to frontend
-	return render_template("frame.html", div1=myDiv1, script1=myScript1, div2=myDiv2, script2=myScript2, div3=myDiv3, script3=myScript3)
+		glob.hasBeenModified = False # we are done plotting 
+
+		# embed those plot components into an html file; send it to frontend
+		html = render_template("frame.html", div1=myDiv1, script1=myScript1, div2=myDiv2, script2=myScript2, div3=myDiv3, script3=myScript3)
+
+		glob.html = html # save the plot
+		return html
+
+	else: #return old plot
+		return glob.html # restore plot from memory
 
 
 def plotTotal(glob):
@@ -175,21 +183,28 @@ def createPlot(glob):
 	return p
 
 
-def doAnalytics(glob):
+def doAnalytics(glob, old):
 
-	glob.pst = "executing" # I should probably create a separate variable instead of using pst
-	plot = taskDistributionPlot(glob) # processing and graphing
-	myDiv1, myScript1 = components(plot) # for embedding
+	if old == False: # a new plot
 
-	glob.pst = "total"
-	plot = taskDistributionPlot(glob)
-	myDiv2, myScript2 = components(plot)
+		glob.pst = "executing" # I should probably create a separate variable instead of using pst
+		plot = taskDistributionPlot(glob) # processing and graphing
+		myDiv1, myScript1 = components(plot) # for embedding
 
-	glob.hasBeenModified = False # we are done plotting 
+		glob.pst = "total"
+		plot = taskDistributionPlot(glob)
+		myDiv2, myScript2 = components(plot)
 
-	# embed those plot components into an html file; send it to frontend
-	return render_template("frame2.html", div1=myDiv1, script1=myScript1, div2=myDiv2, script2=myScript2)
+		glob.hasBeenModified = False # we are done plotting 
 
+		# embed those plot components into an html file; send it to frontend
+		html = render_template("frame2.html", div1=myDiv1, script1=myScript1, div2=myDiv2, script2=myScript2)
+
+		glob.html = html # save plot
+		return html
+
+	else: #return old plot
+		return glob.html # restore plot from memory
 
 def taskDistributionAnalytics(glob): # algorithm for the time spent on each task (total + executing)
 	

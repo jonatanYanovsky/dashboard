@@ -44,20 +44,20 @@ def getPlot(): # our primary controller function
 		if glob.hasBeenModified == True: # new data has appeared, plot it
 			if glob.plotType != "visualization": 
 				print "performing graphing" 
-				return plotting.doGraphing(glob)
+				return plotting.doGraphing(glob, False)
 			else:
 				print "performing visualization" 
-				return plotting.doAnalytics(glob)
+				return plotting.doAnalytics(glob, False)
 
 		if glob.reachedEnd == True: # we have not seen any new data
 			if req == "new": # request from new window, but requesting a plot that has been previously parsed (its data is saved, so we do not need to parse a second time)
 				# we do not store plots (yet), so redo graphing
 				if glob.plotType != "visualization":
-					print "returning old graph" 
-					return plotting.doGraphing(glob)
+					print "returning old graph" # from memory
+					return plotting.doGraphing(glob, True)
 				else:
-					print "returning old visualization" 
-					return plotting.doAnalytics(glob)
+					print "returning old visualization" # from memory
+					return plotting.doAnalytics(glob, True)
 
 			else: # existing window, but no need to display new data
 				print "We've reached the end of the log file. Your EnTK execution has concluded."

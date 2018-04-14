@@ -71,6 +71,8 @@ class GlobalData(object): # a data storage container that is passed to almost ev
 		self._taskStartTimeTotal = {} # holds start time for total time visualization
 		self._taskStartTimeExecution = {} # holds start time for executing
 
+		self._html = ""
+
 	def reset(self): # to restart parsing
 		self.__init__()
 		print "reset self"
@@ -470,4 +472,12 @@ class GlobalData(object): # a data storage container that is passed to almost ev
 		return self._taskStartTimeExecution[idx]
 	def __setitem__(self, idx, value):
 		self._taskStartTimeExecution[idx] = value
+
+	@property
+	def html(self):
+		"""'html' property."""
+		return self._html
+	@html.setter
+	def html(self, value):
+		self._html = value
 
