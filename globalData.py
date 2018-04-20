@@ -1,6 +1,10 @@
 # Written by Jonatan Yanovsky
 
-class GlobalData(object): # a data storage container that is passed to almost every function in reader.py
+
+"""
+A data storage container that is passed to almost every backend python function. This class contains every data structure used for parsing, processing, and plotting (P's). It also contains control data for helping the program remember what line to start parsing at, when to terminate, and how long to parse for. Some data structures have to be replicated for each of the pst types. There are no separate classes for methods belonging to the three P's mentioned above. 
+"""
+class GlobalData(object): # 
 
 	def __init__(self):
 
@@ -79,8 +83,11 @@ class GlobalData(object): # a data storage container that is passed to almost ev
 		self.__init__()
 		
 
+
+	"""
+	Reset processed data only, not the already-parsed data. This is used for picking a new plot type but not having to re-parse all the data collected. This enables a separation of concerns from parsing and processing. Parsing may continue while processing is ordered to build a new plot.
+	"""
 	def resetProcessedData(self):
-		# reset only the processed data, NOT the data we've parsed already
 		print "reset all processed data (not parsed data)"
 
 		self._pipelineLastIndex = 0
@@ -100,8 +107,9 @@ class GlobalData(object): # a data storage container that is passed to almost ev
 		self._taskStartTimeExecution = {}
 
 
-	# setters and getters below
-
+	"""
+	Setters and getters below. These methods are the access points to the private class members created in __init__().
+	"""
 	@property
 	def myHandlerDirectory(self):
 		"""'myHandlerDirectory' property."""

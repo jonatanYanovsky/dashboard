@@ -8,7 +8,10 @@ from watchdog.observers import Observer # object that scans for any changes to l
 from watchdog.events import FileSystemEventHandler # event handler used in tandem with the above import
 
 
-class MyHandler(FileSystemEventHandler): # class used to detect changes, works in tandem with scanForChanges
+"""
+class used to detect file-system changes. Waits for scanForChanges() to raise a file-system event, then processes the event to see if it is valid (the file we were watching was modified)
+"""
+class MyHandler(FileSystemEventHandler): # 
 	def on_modified(self, event): # if the Observer has detected a change to a file
 
 		if self.detectedChange == True: # don't print multiple copies of the same line
@@ -23,7 +26,10 @@ class MyHandler(FileSystemEventHandler): # class used to detect changes, works i
 	detectedChange = False # a copy of the detectedChange variable used in GlobalData
 
 
-def scanForChanges(glob): # a function that waits for new changes to the log file
+"""
+Watches for changes to the log file. Configures MyHandler and contains the logic to keep waiting on or stop waiting on changes. Also has a KeyboardInterrupt exception that checks if the user wants to terminate the program.
+"""
+def scanForChanges(glob):
 
 	if glob.stop == True: # do not wait for changes if we need to terminate
 		return
@@ -58,7 +64,10 @@ def scanForChanges(glob): # a function that waits for new changes to the log fil
 		return
 
 
-def testReader(glob): # prototype for changes-scanning file parsing
+"""
+The one-size fits all parser. Currently only reads through a single file - "appdata". Checking a different file requires the user to terminate and restart dashboard. This function retrieves data from GlobalData and calls scanForChanges if it has not detected new data in the log file. Each line in the log file is read and parsed for time, event, pst, and ID data. This data is then saved into the GlobalData instance for use in processing.
+"""
+def testReader(glob): 
 
 	if glob.reachedEnd == True: # do not parse if done parsing
 		return 0
@@ -177,7 +186,10 @@ def testReader(glob): # prototype for changes-scanning file parsing
 				glob.taskNewIndex += 1
 	
 
-def getConf(glob): # get data stored in configuration file, and find the directory that it points to
+"""
+Get the data stored in configuration file, and find the directory that it points to. This is a multi-step processes as EnTK uses files to save its event logs instead of a queue. A queue would allow dashboard to read from a pipe and store the information directly into GlobalData, without the need for file interactions.
+"""
+def getConf(glob): 
 	with open('dashboard.conf') as conf: # open configuration file
 		conf.readline() # skip first line
 		row = conf.readline() # get second line, the path to the example/executable, but not the output

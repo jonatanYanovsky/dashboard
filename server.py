@@ -10,12 +10,18 @@ import globalData # the file that contains the "glob" object
 import plotting # the file that contains plotting functionality
 
 
+"""
+Initialize: GlobalData, Flask (+CORS), and open a new tab in user's browser
+"""
 glob = globalData.GlobalData() # intialize data storage container
 app = Flask(__name__) # start the server
 CORS(app) # allow communication from server to browser over localhost (same machine). This is acceptable as dashboard is not a web application, but rather a local-running application
 webbrowser.open_new_tab("index.html") # open the webpage in the browser: start the frontend
 
 
+"""
+All traffic from frontend goes through here. This portion of dashboard is able to create plotting and parse-data requests. It also communicates with the frontend and returns "sleep" commands when there is nothing for the frontend to do.
+"""
 @app.route('/', methods=['GET', 'POST']) # when we recieve a request from frontend
 def getPlot(): # our primary controller function
 	if request.method == 'POST': # if the request is set to 'POST': a sanity check

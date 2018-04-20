@@ -7,8 +7,11 @@ from bokeh.models.glyphs import VBar # for a vertical bar graph
 from bokeh.embed import components # for components(), which is used to embed plots in an iframe
 from flask import render_template # used in doGraphing()
 
-	
-def doGraphing(glob, old): # plot pst
+
+"""
+Plot 3-in-1 PST plot. Can return an old (existing) plot or create a new one if there is none available (new data to plot has been found).
+"""
+def doGraphing(glob, old):
 
 	if old == False: # a new plot
 
@@ -35,10 +38,11 @@ def doGraphing(glob, old): # plot pst
 	else: #return old plot
 		return glob.html # restore plot from memory
 
-
+"""
+Process data for 3-in-1 PST plot. This algorithm computes the SUM of the total number of tasks that have passed through each state.
+"""
 def plotTotal(glob):
 
-	# algorithm for the SUM of the total number of tasks that have passed through each state
 	if glob.pst == "pipeline":
 		while glob.pipelineLastIndex < glob.pipelineNewIndex: # if new data
 			item = glob.pipelineStates[glob.pipelineLastIndex] # get the next event from the data structure
@@ -58,9 +62,11 @@ def plotTotal(glob):
 			glob.taskStatesTotal[item] += 1 
 		
 
+"""
+Process data for 3-in-1 PST plot. This algorithm for the number of tasks that ARE in each state.
+"""
 def plotCurrent(glob):
 
-	# algorithm for the number of tasks that ARE in each state
 	if glob.pst == "pipeline":
 		while glob.pipelineLastIndex < glob.pipelineNewIndex: # if new data
 			item = glob.pipelineStateHistory[glob.pipelineLastIndex] # get the next event from the data structure
@@ -118,6 +124,9 @@ def plotCurrent(glob):
 
 			glob.taskLastIndex += 1
 
+"""
+Bokeh plotting functionality. This function gets called three times by doGraphing(), each time creating a plot for one of the three PST plots. Configures plot colors, axes, and titles. In addition, sets the x-axis labels to look as if they are categorical data, although x-axis data is saved as integers instead of strings to save memory.
+"""
 def createPlot(glob):
 
 	if glob.plotType == "total": # which plot do we want
@@ -183,6 +192,9 @@ def createPlot(glob):
 	return p
 
 
+"""
+Similar to doGraphing(), but creates two analytics plots.
+"""
 def doAnalytics(glob, old):
 
 	if old == False: # a new plot
@@ -206,7 +218,10 @@ def doAnalytics(glob, old):
 	else: #return old plot
 		return glob.html # restore plot from memory
 
-def taskDistributionAnalytics(glob): # algorithm for the time spent on each task (total + executing)
+"""
+Process data for 2-in-1 Analytics plot. This algorithm computes the time spent on each task (total + executing).
+"""
+def taskDistributionAnalytics(glob):
 	
 	while glob.taskLastIndex < glob.taskNewIndex: # if new data
 		item = glob.taskStateHistory[glob.taskLastIndex] # get the next event from the data structure
@@ -224,7 +239,6 @@ def taskDistributionAnalytics(glob): # algorithm for the time spent on each task
 			item = glob.taskDuration[nameID] # get existing data
 			item[0] = mySeconds # store the seconds elapsed between 0 and now
 			glob.taskDuration[nameID] = item # save in memory
-			print nameID, mySeconds
 		
 		# just the time spent executing
 		if newState == 3: # if SUBMITTED
@@ -236,12 +250,14 @@ def taskDistributionAnalytics(glob): # algorithm for the time spent on each task
 			item = glob.taskDuration[nameID] # get existing data
 			item[1] = mySeconds # store the seconds elapsed between 0 and now
 			glob.taskDuration[nameID] = item # save in memory
-			print nameID, mySeconds
 
 		glob.taskLastIndex += 1 # move to next new data
 
 
-def checkIndices(glob, idx): # helper function that fills in "holes" in the taskDuration list
+"""
+helper function that fills in "holes" in the taskDuration list created during taskDistributionAnalytics()
+"""
+def checkIndices(glob, idx):
 	try: # check if the index exists
 		glob.taskDuration[idx]
 	except: # initialize null elements as 0
@@ -250,6 +266,9 @@ def checkIndices(glob, idx): # helper function that fills in "holes" in the task
 			glob.taskDuration.append([0, 0])
 
 	
+"""
+Plots analytics functions.
+"""
 def taskDistributionPlot(glob):
 	taskDistributionAnalytics(glob)
 
